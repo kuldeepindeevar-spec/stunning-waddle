@@ -1,0 +1,1376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PGY Verdict Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Serif:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#14202F;
+  --paper:#F3F5F1;
+  --card:#FDFDFB;
+  --rule:#C7CDC4;
+  --muted:#5A6472;
+  --h1:#1B4EA8;
+  --h2:#8A4B12;
+  --breach:#B3261E;
+  --verify:#14724C;
+  --amber:#B07A16;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:13px;line-height:1.5;
+}
+.wrap{max-width:1080px;margin:0 auto;padding:26px 18px 90px}
+h1,h2,h3,h4{font-family:'Barlow Condensed','Arial Narrow',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin:0}
+.serif{font-family:'IBM Plex Serif',Georgia,serif;font-weight:400}
+.mono{font-family:'IBM Plex Mono',ui-monospace,monospace}
+.stamp{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:8.5px;letter-spacing:.11em;color:var(--muted);text-transform:uppercase;white-space:nowrap}
+.meta{font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.nd{color:var(--muted);opacity:.8}
+.derived{font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);border:1px solid var(--rule);border-radius:2px;padding:0 4px;margin-left:6px;vertical-align:middle;white-space:nowrap}
+
+/* header */
+.hdr{display:flex;justify-content:space-between;align-items:flex-start;gap:22px;flex-wrap:wrap;border-bottom:2px solid var(--ink);padding-bottom:14px;margin-bottom:10px}
+.hdr h1{font-size:31px;line-height:.98}
+.hdr .kicker{font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+.sub{font-family:'IBM Plex Serif',Georgia,serif;font-style:italic;font-size:12.5px;color:var(--muted);max-width:600px;margin:8px 0 0}
+.due{border:2px solid var(--amber);border-radius:2px;padding:8px 11px;min-width:236px;background:#FCF8EE}
+.due .t{font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:11.5px;color:var(--amber)}
+.due .v{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:22px;line-height:1.05;margin-top:2px}
+.storage-note{font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:0 0 22px;padding-bottom:2px}
+.storage-note.bad{color:var(--amber)}
+
+/* panels */
+.panel{background:var(--card);border:2px solid var(--ink);border-radius:2px;margin-bottom:26px}
+.panel>h2{font-size:19px;padding:9px 14px 7px;border-bottom:2px solid var(--ink)}
+.panel>h2 .n{color:var(--muted);font-weight:600;margin-right:8px}
+.admit{font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--verify);border-bottom:1.5px solid var(--rule);padding:6px 14px;margin:0}
+.pad{padding:14px}
+h3{font-size:14px;letter-spacing:.09em;border-bottom:1.5px solid var(--rule);padding-bottom:4px;margin:26px 0 11px;display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+h3:first-child{margin-top:0}
+h3 .h3note{font-family:'IBM Plex Mono',monospace;font-weight:400;font-size:9.5px;letter-spacing:.09em;color:var(--muted);text-transform:uppercase}
+h4{font-size:12px;letter-spacing:.09em;margin:0 0 4px}
+p.standing{font-family:'IBM Plex Serif',Georgia,serif;font-size:13px;line-height:1.62;margin:0 0 14px;max-width:74ch}
+p.interp{font-family:'IBM Plex Serif',Georgia,serif;font-style:italic;font-size:12px;line-height:1.6;color:var(--muted);margin:6px 0 0;max-width:78ch}
+
+/* hypotheses */
+.hyp-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.hyp{border:1.5px solid var(--rule);border-radius:2px;padding:11px 12px;background:#fff}
+.hyp.a{border-left:5px solid var(--h1)}
+.hyp.b{border-left:5px solid var(--h2)}
+.hyp h4{font-size:13px}
+.hyp.a h4{color:var(--h1)}
+.hyp.b h4{color:var(--h2)}
+.hyp p{font-family:'IBM Plex Serif',Georgia,serif;font-size:12.5px;line-height:1.6;margin:6px 0 0}
+.caveat{font-family:'IBM Plex Serif',Georgia,serif;font-style:italic;font-size:12.5px;line-height:1.62;margin:14px 0 0;padding:10px 12px;border-left:2px solid var(--ink);background:#F7F8F5;max-width:none}
+
+/* probability */
+.prob{margin-top:16px;border:2px solid var(--rule);border-radius:2px;padding:11px 12px;background:#fff}
+.prob.nag{border-color:var(--amber);background:#FCF8EE}
+.prob-row{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.prob .big{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:34px;line-height:1}
+.prob.nag .big{color:var(--amber)}
+.prob .nagline{font-family:'IBM Plex Serif',Georgia,serif;font-style:italic;font-size:12px;color:var(--amber)}
+.revlist{margin:10px 0 0;padding:0;list-style:none;border-top:1px solid var(--rule)}
+.revlist li{display:flex;gap:10px;align-items:baseline;padding:4px 0;border-bottom:1px solid var(--rule);font-size:11px}
+.strike{text-decoration:line-through;color:var(--muted)}
+
+/* tables */
+table{width:100%;border-collapse:collapse}
+th{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:.11em;text-transform:uppercase;text-align:left;border-bottom:1.5px solid var(--ink);padding:4px 6px;color:var(--muted);vertical-align:bottom}
+td{border-bottom:1px solid var(--rule);padding:6px;vertical-align:top;font-size:11.5px}
+td.ser{font-family:'IBM Plex Serif',Georgia,serif;font-size:12px;line-height:1.55}
+tr.struck td.ser{text-decoration:line-through;color:var(--muted)}
+.scroll{overflow-x:auto}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+
+/* chips */
+.chip{display:inline-block;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;border:1px solid currentColor;border-radius:2px;padding:1px 5px;white-space:nowrap}
+.c-h1{color:var(--h1)}
+.c-h2{color:var(--h2)}
+.c-open,.c-neutral{color:var(--muted)}
+.c-verify{color:var(--verify)}
+.c-amber{color:var(--amber)}
+.c-breach{color:var(--breach)}
+.c-ink{color:var(--ink)}
+
+/* tallies */
+.tally{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.tally .t{border:1.5px solid var(--rule);border-radius:2px;padding:6px 10px;min-width:132px;background:#fff}
+.tally .t.a{border-left:4px solid var(--h1)}
+.tally .t.b{border-left:4px solid var(--h2)}
+.tally .t.c{border-left:4px solid var(--muted)}
+.tally .v{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:23px;line-height:1}
+
+/* forms */
+input,select,textarea{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11.5px;border:1.5px solid var(--ink);border-radius:2px;background:#fff;padding:4px 6px;color:var(--ink);max-width:100%}
+textarea{width:100%;resize:vertical;font-family:'IBM Plex Serif',Georgia,serif;font-size:12px}
+label{display:block}
+label .lab{font-size:8.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:2px}
+button{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.1em;font-weight:700;font-size:11.5px;border:1.5px solid var(--ink);border-radius:2px;background:var(--ink);color:var(--paper);padding:4px 11px;cursor:pointer;line-height:1.5}
+button.ghost{background:transparent;color:var(--ink)}
+button.tiny{font-size:10px;padding:1px 6px;letter-spacing:.09em}
+button[disabled]{opacity:.4;cursor:not-allowed}
+.formrow{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;border:1.5px solid var(--rule);border-radius:2px;padding:10px;background:#F8F9F6;margin-bottom:12px}
+.formrow .grow{flex:1 1 260px}
+.formrow .grow input{width:100%}
+.toggle{display:inline-flex;border:1.5px solid var(--ink);border-radius:2px;overflow:hidden}
+.toggle button{border:0;border-right:1px solid var(--ink);background:transparent;color:var(--muted);font-size:9.5px;padding:2px 7px;border-radius:0}
+.toggle button:last-child{border-right:0}
+.toggle button.on{background:var(--ink);color:var(--paper)}
+.toggle button.on.h1{background:var(--h1)}
+.toggle button.on.h2{background:var(--h2)}
+
+/* charts */
+.chart{width:100%;height:auto;display:block}
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin:8px 0 0;font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.legend i{display:inline-block;width:11px;height:11px;border:1.5px solid var(--ink);vertical-align:-2px;margin-right:5px}
+.legend i.fill{background:var(--ink)}
+.legend i.hatch{background:repeating-linear-gradient(45deg,var(--h2),var(--h2) 2px,transparent 2px,transparent 5px)}
+
+/* empty state */
+.empty{border:1.5px dashed var(--rule);border-radius:2px;padding:14px;background:#F8F9F6;font-family:'IBM Plex Serif',Georgia,serif;font-size:12.5px;line-height:1.6;color:var(--muted)}
+
+/* cards */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.card{border:1.5px solid var(--ink);border-radius:2px;padding:11px 12px;background:#fff}
+.card .top{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:5px}
+.card p{font-family:'IBM Plex Serif',Georgia,serif;font-size:12px;line-height:1.58;margin:0}
+.card .foot{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:9px;padding-top:7px;border-top:1px solid var(--rule)}
+.card.breached{border-color:var(--breach);border-width:2px;background:#FDF6F5}
+.card.breached .top h4{color:var(--breach)}
+.card.redstat{border-color:var(--breach);border-width:2px;background:#FDF6F5}
+.card.amberstat{border-color:var(--amber)}
+.notes{margin:8px 0 0;padding:0;list-style:none}
+.notes li{border-top:1px solid var(--rule);padding:5px 0 0;margin-top:5px;font-family:'IBM Plex Serif',Georgia,serif;font-size:11.5px;line-height:1.5}
+
+/* big figure */
+.headline{display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap;border:2px solid var(--verify);border-radius:2px;padding:14px;background:#F5FAF7}
+.headline .fig{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:74px;line-height:.86;color:var(--verify);letter-spacing:.01em}
+.headline .side{flex:1 1 300px}
+.trendrow{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.trendrow .slot{border:1.5px solid var(--rule);border-radius:2px;padding:4px 7px;min-width:74px;background:#fff}
+.trendrow .slot .q{font-size:8.5px;letter-spacing:.11em;color:var(--muted)}
+.trendrow .slot .v{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:16px;line-height:1.1}
+.trendrow .slot.has{border-color:var(--verify)}
+.trendrow .slot.has .v{color:var(--verify)}
+
+/* rules */
+.rules{list-style:none;margin:16px 0 0;padding:0}
+.rules li{display:flex;gap:11px;align-items:flex-start;border:1.5px solid var(--rule);border-radius:2px;padding:9px 11px;margin-bottom:9px;background:#fff}
+.lamp{width:13px;height:13px;border:2px solid var(--muted);border-radius:2px;flex:0 0 auto;margin-top:2px;background:transparent}
+.lamp.on-green{border-color:var(--verify);background:var(--verify)}
+.lamp.on-amber{border-color:var(--amber);background:var(--amber)}
+.lamp.on-breach{border-color:var(--breach);background:var(--breach)}
+.rules .rtext{font-family:'IBM Plex Serif',Georgia,serif;font-size:12.5px;line-height:1.55}
+.rules .rid{font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:.09em;margin-right:6px}
+.rules .rstat{font-size:9px;letter-spacing:.11em;text-transform:uppercase;color:var(--muted);margin-top:4px}
+.banner{border:2px solid var(--breach);color:var(--breach);background:#FDF6F5;border-radius:2px;padding:9px 12px;margin-bottom:11px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:15px;letter-spacing:.11em;text-transform:uppercase}
+.plain-rule{border:2px solid var(--ink);border-radius:2px;padding:10px 12px;margin-top:12px;font-family:'IBM Plex Serif',Georgia,serif;font-size:12.5px;line-height:1.58;background:#F7F8F5}
+
+/* appendix */
+details.appendix{border:2px solid var(--ink);border-radius:2px;background:var(--card);margin-bottom:26px}
+details.appendix>summary{list-style:none;cursor:pointer;padding:9px 14px 7px;font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.05em;font-size:19px}
+details.appendix>summary::-webkit-details-marker{display:none}
+details.appendix[open]>summary{border-bottom:2px solid var(--ink)}
+details.appendix>summary::after{content:' [ + ]';font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:.09em}
+details.appendix[open]>summary::after{content:' [ \2212 ]'}
+.opcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(196px,1fr));gap:11px}
+.opcard{border:1.5px solid var(--rule);border-radius:2px;padding:9px 10px;background:#fff}
+.opcard .v{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:25px;line-height:1}
+.guide{border:1.5px solid var(--rule);border-left:4px solid var(--muted);border-radius:2px;padding:10px 12px;background:#fff;margin-top:14px}
+.guide dl{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:6px 16px;margin:6px 0 0}
+.guide dt{font-size:8.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--muted)}
+.guide dd{margin:0 0 4px;font-size:12px}
+
+/* update form */
+.fieldgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:9px}
+.danger{border:2px solid var(--amber);border-radius:2px;padding:11px 12px;background:#FCF8EE;margin-top:16px}
+.sources{font-size:9.5px;line-height:1.7;letter-spacing:.05em;color:var(--muted);border-top:1.5px solid var(--rule);padding-top:12px}
+@media (max-width:720px){
+  .hyp-grid{grid-template-columns:1fr}
+  .headline .fig{font-size:56px}
+  .hdr h1{font-size:25px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hdr">
+  <div>
+    <div class="kicker">Pagaya Technologies &middot; NASDAQ PGY &middot; Verdict engine</div>
+    <h1>Which story is true</h1>
+    <p class="sub">Companion to the PGY flow-metrics tracker. That artifact is a map of the business. This one is a trial record: two hypotheses, pre-committed tests, prices set by outsiders, and the rules that bind the holder. Nothing here is deleted; superseded entries are struck and dated.</p>
+  </div>
+  <div class="due" id="dueBox"></div>
+</header>
+<div class="storage-note" id="storageNote">Storage: checking&hellip;</div>
+
+<!-- 2 - HYPOTHESES -->
+<section class="panel" id="p-hyp">
+  <h2>The two hypotheses</h2>
+  <div class="pad">
+    <div class="hyp-grid">
+      <article class="hyp a">
+        <h4>H1 &middot; Informational edge</h4>
+        <p>Pagaya's model prices the reject pile better than the partners' models because it sees cross-partner data they cannot. If true, the edge compounds with volume, losses fall at constant approval rates, spreads tighten against comparable consumer ABS, and a network multiple is justified.</p>
+      </article>
+      <article class="hyp b">
+        <h4>H2 &middot; Regulatory conduit</h4>
+        <p>The reject pile is profitable mainly because bank capital rules and credit-policy constraints force partners to decline loans that are economically sound. The edge is real but rented &mdash; it belongs to the rulebook, not the model &mdash; it erodes as underwriting AI diffuses to the partners themselves, and it deserves a specialty-finance multiple.</p>
+      </article>
+    </div>
+    <p class="caveat">Three variables moved together over the disclosed period &mdash; model quality, tightened underwriting thresholds, and asset mix &mdash; so no single-quarter improvement in losses can be attributed to any one of them. Only the pre-committed tests below discriminate.</p>
+    <div id="probStrip"></div>
+  </div>
+</section>
+
+<!-- 4 - THE TRIAL -->
+<section class="panel" id="p-trial">
+  <h2><span class="n">Panel 1</span>The trial</h2>
+  <div class="pad">
+    <h3>Evidence ledger <span class="h3note">append-only &middot; nothing is deleted</span></h3>
+    <div class="tally" id="tally"></div>
+    <form class="formrow" id="evForm">
+      <label style="flex:0 0 88px"><span class="lab">Quarter</span><input id="evQ" size="6" value="2Q26" required></label>
+      <label class="grow"><span class="lab">Evidence &mdash; one sentence, naming the hypothesis and why</span><input id="evText" required></label>
+      <label><span class="lab">Files under</span>
+        <select id="evFile"><option value="h1">H1</option><option value="h2">H2</option><option value="contested">contested</option><option value="neutral">neutral</option></select>
+      </label>
+      <label><span class="lab">Weight</span>
+        <select id="evW"><option>1</option><option selected>2</option><option>3</option></select>
+      </label>
+      <button type="submit">File entry</button>
+    </form>
+    <div class="scroll"><table id="evTable"></table></div>
+
+    <h3>Discriminating tests <span class="h3note">written before the answer arrived</span></h3>
+    <div class="scroll"><table id="testTable"></table></div>
+    <p class="interp" id="testCount"></p>
+  </div>
+</section>
+
+<!-- 5 - THE TRUTH CLOCK -->
+<section class="panel" id="p-clock">
+  <h2><span class="n">Panel 2</span>The truth clock</h2>
+  <div class="pad">
+    <p class="standing">Fees are booked in the quarter. The truth about the loans arrives over three to five years, inside unconsolidated trusts this company does not report on. Any business with front-loaded fees and back-loaded losses looks brilliant while volume grows, because new fees outrun old losses. The model is only tested when growth stops.</p>
+
+    <h3>Timing <span class="h3note">fees recognised now &middot; losses recognised later</span></h3>
+    <div id="timingChart"></div>
+    <div class="legend">
+      <span><i class="fill"></i>FRLPC, $M &mdash; booked this quarter</span>
+      <span><i class="hatch"></i>Losses to earnings, $M &mdash; arriving from prior vintages</span>
+      <span><i></i>n/d &mdash; not disclosed, not zero</span>
+    </div>
+    <p class="interp">No cumulative line is drawn. Cumulating across an undisclosed quarter would interpolate a number the issuer did not give.</p>
+
+    <h3>Vintage loss curves <span class="h3note">user-entered from trustee and surveillance reports</span></h3>
+    <div id="vintageBlock"></div>
+
+    <h3>Falsification board <span class="h3note">immutable once created</span></h3>
+    <div class="cards" id="falsBoard"></div>
+  </div>
+</section>
+
+<!-- 6 - THE ONE INDEPENDENT PRICE -->
+<section class="panel" id="p-price">
+  <h2><span class="n">Panel 3</span>The one independent price</h2>
+  <p class="admit">Admission rule &mdash; only figures set by parties other than management may appear in this panel. Everything self-reported lives in the appendix.</p>
+  <div class="pad">
+    <h3>Certificate fair value against amortized cost</h3>
+    <div id="fvacBlock"></div>
+    <h3>ABS execution <span class="h3note">the market re-underwriting the model, deal by deal</span></h3>
+    <div id="absBlock"></div>
+    <h3>Related-party fee share</h3>
+    <div id="rpBlock"></div>
+  </div>
+</section>
+
+<!-- 7 - SURVIVAL BOARD -->
+<section class="panel" id="p-surv">
+  <h2><span class="n">Panel 4</span>The survival board</h2>
+  <p class="admit" style="color:var(--muted)">These are not metrics. Each card asks whether the business can die, and a card unchecked for more than 100 days downgrades itself to amber.</p>
+  <div class="pad"><div class="cards" id="survBoard"></div></div>
+</section>
+
+<!-- 8 - POSITION LEDGER -->
+<section class="panel" id="p-pos">
+  <h2><span class="n">Panel 5</span>The position ledger</h2>
+  <p class="admit" style="color:var(--muted)">This panel governs the holder, not the company.</p>
+  <div class="pad">
+    <div id="posBlock"></div>
+    <h3>Mechanical rules <span class="h3note">evaluated live against panels 1, 2 and 4</span></h3>
+    <div id="ruleBanners"></div>
+    <ul class="rules" id="ruleList"></ul>
+    <div class="plain-rule">Averaging down is disallowed while this screen shows red. That is the entire point of writing rules before the drawdown.</div>
+    <h3>Pre-mortem <span class="h3note">append-only</span></h3>
+    <div id="premortem"></div>
+  </div>
+</section>
+
+<!-- 9 - PER-SHARE TRUTH -->
+<section class="panel" id="p-share">
+  <h2><span class="n">Panel 6</span>Per-share truth</h2>
+  <div class="pad">
+    <p class="standing">The unit of account is per-share intrinsic value. Net income tripling means little if the share count is doing the same work in reverse. Adjusted EBITDA appears nowhere outside the appendix.</p>
+    <div class="scroll"><table id="shareTable"></table></div>
+  </div>
+</section>
+
+<!-- 10 - INTERROGATION LIST -->
+<section class="panel" id="p-int">
+  <h2><span class="n">Panel 7</span>The interrogation list</h2>
+  <div class="pad">
+    <p class="standing">Questions addressed to investor relations. A refusal is itself evidence &mdash; file it in the ledger under H2 at weight 1.</p>
+    <div class="scroll"><table id="intTable"></table></div>
+  </div>
+</section>
+
+<!-- 11 - APPENDIX -->
+<details class="appendix" id="p-appx">
+  <summary>Appendix &mdash; operations (context, not verdict)</summary>
+  <div class="pad">
+    <div class="opcards" id="opCards"></div>
+    <div class="guide" id="guideBar"></div>
+    <div class="guide" id="constBar"></div>
+  </div>
+</details>
+
+<!-- 12 - UPDATE FORM -->
+<section class="panel" id="p-update">
+  <h2>Update</h2>
+  <div class="pad">
+    <p class="standing">One row per quarter. Blank means <span class="mono">null</span>, which renders as <span class="mono">n/d</span> &mdash; never as zero. Saving merges the row over the shipped baseline and recomputes the tests, the falsification cards, the rule lamps and the appendix. Only non-blank values are merged, so a partial row fills gaps without erasing what is already recorded.</p>
+    <form id="qForm">
+      <div class="fieldgrid" id="qFields"></div>
+      <div style="margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <button type="submit">Save quarter</button>
+        <span class="meta" id="qFormNote"></span>
+      </div>
+    </form>
+    <div class="danger">
+      <h4 style="color:var(--amber)">Reset to shipped baseline</h4>
+      <p class="serif" style="font-size:12.5px;line-height:1.58;margin:6px 0 9px">This erases the notebook, not just the numbers. Every evidence entry, verdict, adjudication, check date, position field and pre-mortem is cleared. Type <span class="mono">RESET</span> to confirm.</p>
+      <div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap">
+        <input id="resetWord" size="10" placeholder="RESET">
+        <button class="ghost" id="resetBtn" type="button">Erase notebook</button>
+        <span class="meta" id="resetNote"></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<p class="sources mono">
+SOURCES &mdash; Company filings (10-Q, 10-K, quarterly shareholder letters) for all self-reported figures; ABS trustee reports and rating-agency presale and surveillance publications (KBRA, DBRS Morningstar) for deal counts, spreads and vintage loss curves. Certificate fair value and amortized cost from the fair-value footnote. Related-party fee share from the related-party transactions footnote. Figures marked <span class="derived">derived</span> are computed on this page from two reported inputs and are not themselves reported. Figures marked n/d are not disclosed by the issuer and are never estimated here.
+</p>
+</div>
+<script>
+'use strict';
+
+/* ---------------------------------------------------------------
+   DATA - exactly as filed. Never interpolate, never infer a null.
+   --------------------------------------------------------------- */
+const BASE=[
+ {q:'1Q25',vol:2.4,rev:290,fee:283,frlpc:116,take:4.8,ebitda:80, ni:8, opex:null,book:null,allow:462,loss:29,  inv:null,part:null,abs:null},
+ {q:'2Q25',vol:2.6,rev:326,fee:318,frlpc:126,take:4.8,ebitda:86, ni:17,opex:39,  book:null,allow:491,loss:14,  inv:null,part:null,abs:null},
+ {q:'3Q25',vol:2.8,rev:350,fee:null,frlpc:139,take:5.0,ebitda:107,ni:23,opex:34, book:null,allow:null,loss:null,inv:null,part:null,abs:null},
+ {q:'4Q25',vol:2.7,rev:335,fee:null,frlpc:131,take:4.9,ebitda:98, ni:34,opex:null,book:945, allow:386,loss:null,inv:null,part:null,abs:null},
+ {q:'1Q26',vol:2.6,rev:318,fee:299,frlpc:121,take:4.6,ebitda:94, ni:25,opex:null,book:null,allow:336,loss:38,  inv:163, part:null,abs:null},
+ {q:'2Q26',vol:3.5,rev:387,fee:366,frlpc:147,take:4.2,ebitda:124,ni:45,opex:31,  book:1040,allow:314,loss:42,  inv:174, part:36,  abs:3.7}
+];
+
+const EXT=[
+ {q:'1Q25',certFV:null, certAC:null, rpShare:null,sharesDil:null,sbc:null,epsDil:null,absDeals:null,absSpread:null},
+ {q:'2Q25',certFV:null, certAC:null, rpShare:null,sharesDil:null,sbc:null,epsDil:null,absDeals:null,absSpread:null},
+ {q:'3Q25',certFV:null, certAC:null, rpShare:null,sharesDil:null,sbc:null,epsDil:null,absDeals:null,absSpread:null},
+ {q:'4Q25',certFV:null, certAC:null, rpShare:null,sharesDil:null,sbc:null,epsDil:null,absDeals:null,absSpread:null},
+ {q:'1Q26',certFV:null, certAC:null, rpShare:null,sharesDil:null,sbc:null,epsDil:null,absDeals:null,absSpread:null},
+ {q:'2Q26',certFV:477.0,certAC:771.6,rpShare:63,  sharesDil:null,sbc:null,epsDil:null,absDeals:6,   absSpread:null}
+];
+
+const BUILD='2026-08-30';
+const NEXT_UPDATE={label:'3Q FY2026',date:'2026-11-17'};
+const F1_DATE='2027-08-15';
+const STALE_DAYS=100;
+
+const FIELDS=[
+ {k:'q',       lab:'Quarter',            unit:'e.g. 3Q26', text:true},
+ {k:'vol',     lab:'Network volume',     unit:'$B'},
+ {k:'rev',     lab:'Total revenue',      unit:'$M'},
+ {k:'fee',     lab:'Revenue from fees',  unit:'$M'},
+ {k:'frlpc',   lab:'FRLPC',              unit:'$M'},
+ {k:'take',    lab:'Take rate',          unit:'%'},
+ {k:'ebitda',  lab:'Adjusted EBITDA',    unit:'$M'},
+ {k:'ni',      lab:'GAAP net income',    unit:'$M'},
+ {k:'opex',    lab:'Core opex',          unit:'% of FRLPC'},
+ {k:'book',    lab:'Retained book',      unit:'$M'},
+ {k:'allow',   lab:'Allowance',          unit:'$M'},
+ {k:'loss',    lab:'Losses to earnings', unit:'$M'},
+ {k:'inv',     lab:'Funding partners',   unit:'count'},
+ {k:'part',    lab:'Lending partners',   unit:'count'},
+ {k:'abs',     lab:'ABS raised',         unit:'$B'},
+ {k:'absDeals',lab:'ABS deal count',     unit:'count'},
+ {k:'absSpread',lab:'ABS spread',        unit:'bps over benchmark'},
+ {k:'certFV',  lab:'Certificates fair value',    unit:'$M'},
+ {k:'certAC',  lab:'Certificates amortized cost',unit:'$M'},
+ {k:'rpShare', lab:'Related-party fee share',    unit:'%'},
+ {k:'sharesDil',lab:'Diluted shares',    unit:'M shares'},
+ {k:'sbc',     lab:'Stock-based comp',   unit:'$M'},
+ {k:'epsDil',  lab:'GAAP diluted EPS',   unit:'$'}
+];
+
+const SEED_EVIDENCE=[
+ {id:'ev1',date:BUILD,q:'2Q26',file:'h2',w:3,text:'Take rate fell 5.0 → 4.2 over three quarters, and the 80bps concession coincides exactly with volume jumping $2.6B → $3.5B — growth is being bought with price.'},
+ {id:'ev2',date:BUILD,q:'2Q26',file:'h2',w:3,text:'Certificates carried at $771.6M amortized cost against $477.0M fair value — the one externally-set price grades the retained paper at 61.8 cents.'},
+ {id:'ev3',date:BUILD,q:'2Q26',file:'h2',w:2,text:'63% of fee revenue is billed to related-party vehicles Pagaya sponsors or administers — the fee payer is partly itself.'},
+ {id:'ev4',date:BUILD,q:'2Q26',file:'h1',w:2,text:'Core opex fell 39% → 31% of FRLPC in a year — the scale economics of the hub are real.'},
+ {id:'ev5',date:BUILD,q:'2Q26',file:'h1',w:2,text:'$3.7B raised across 6 ABS deals in one quarter — the capital-markets execution franchise is real and hard to replicate.'},
+ {id:'ev6',date:BUILD,q:'2Q26',file:'contested',w:2,text:'Allowance falling ($491M → $314M) while quarterly charges rise ($14M → $42M) — consistent with legacy burn-off and with under-reserving; cannot be filed until F1 adjudicates.'},
+ {id:'ev7',date:BUILD,q:'2Q26',file:'contested',w:1,text:'Retained book grew $945M → $1,040M alongside volume; net capital intensity ~2.4% — capital-light at the margin, but the stock of risk is growing, not shrinking.'}
+];
+
+const TESTS=[
+ {id:'T1',name:'Take rate at constant mix',
+  h1:'stable or firming', h2:'secular decay',
+  def:'h2', note:'',
+  read:qs=>{const t=qs.filter(x=>x.take!=null);
+    if(!t.length) return 'n/d';
+    if(t.length===1) return fx(t[0].take,1)+'% only reading; mix not disclosed';
+    let pk=-1,pi=0; t.forEach((x,i)=>{if(x.take>=pk){pk=x.take;pi=i;}});
+    const last=t[t.length-1], n=t.length-1-pi;
+    if(n<=0) return fx(last.take,1)+'% latest and highest of the series; mix not disclosed';
+    return fx(pk,1)+' → '+fx(last.take,1)+' in '+word(n)+' quarter'+(n>1?'s':'')+'; mix not disclosed';}},
+ {id:'T2',name:'New-issue spread vs benchmark consumer ABS',
+  h1:'tightens relative to comps as the model proves out', h2:'tracks the market, no idiosyncratic tightening',
+  def:'open', note:'',
+  read:qs=>{const s=qs.filter(x=>x.absSpread!=null);
+    if(!s.length) return 'n/d — enter per deal';
+    const l=s[s.length-1];
+    if(s.length===1) return l.absSpread+'bps at '+l.q+', first datapoint';
+    const p=s[s.length-2];
+    return l.absSpread+'bps at '+l.q+', from '+p.absSpread+'bps at '+p.q;}},
+ {id:'T3',name:'Certificate FV / amortized cost',
+  h1:'rises toward par as vintages season', h2:'stagnates or falls',
+  def:'open', note:'level itself favors H2',
+  read:qs=>{const r=ratios(qs);
+    if(!r.length) return 'n/d';
+    if(r.length===1) return fx(r[0].v,1)+'%, first datapoint';
+    const l=r[r.length-1],p=r[r.length-2];
+    return fx(l.v,1)+'% at '+l.q+', from '+fx(p.v,1)+'% at '+p.q;}},
+ {id:'T4',name:'Related-party fee share',
+  h1:'falls as third-party capital crowds in', h2:'stays high — the loop stays closed',
+  def:'open', note:'level itself favors H2',
+  read:qs=>{const s=qs.filter(x=>x.rpShare!=null);
+    if(!s.length) return 'n/d';
+    if(s.length===1) return fx(s[0].rpShare,0)+'%, first datapoint';
+    const l=s[s.length-1],p=s[s.length-2];
+    return fx(l.rpShare,0)+'% at '+l.q+', from '+fx(p.rpShare,0)+'% at '+p.q;}},
+ {id:'T5',name:'Partner behavior',
+  h1:'volume per existing partner rises; partners deepen', h2:'a top partner in-houses or leaves',
+  def:'open', note:'',
+  read:qs=>{const s=qs.filter(x=>x.part!=null);
+    if(!s.length) return 'n/d — partner count not in the current window';
+    return s[s.length-1].part+' partners; cohort split undisclosed';}},
+ {id:'T6',name:'Loss level after legacy burn-off',
+  h1:'below $35M/quarter by 2Q27', h2:'persists above — the model, not the vintage',
+  def:'open', note:'pending F1',
+  read:qs=>{const s=qs.filter(x=>x.loss!=null);
+    if(!s.length) return 'n/d';
+    return '$'+fx(s[s.length-1].loss,0)+'M latest';}}
+];
+
+const FALS=[
+ {id:'F1',title:'The legacy-book alibi expires',
+  claim:'If quarterly losses to earnings still exceed $35M in the 2Q27 print, the loss level belongs to the model, not to the 2021–22 vintage.',
+  date:F1_DATE,est:true,trigger:'2Q27 print, estimated mid-August 2027'},
+ {id:'F2',title:'Take-rate floor',
+  claim:'Take rate below 4.0% for two consecutive quarters, absent a disclosed mix shift, is secular decay rather than seasoning.',
+  date:null,trigger:'Evaluated automatically on every data update'},
+ {id:'F3',title:'The marks must heal',
+  claim:'Certificate FV/AC ratio declining quarter-on-quarter for two consecutive quarters means retained-book marks are worsening while fees are booked upfront.',
+  date:null,trigger:'Evaluated automatically as ratio data is entered'},
+ {id:'E1',title:'Partner in-housing',
+  claim:'Any top-five lending partner announcing in-house underwriting of the segment it currently routes to Pagaya is near-fatal to H1 — immediate exit review regardless of every other reading.',
+  date:null,trigger:'Event, no date',event:true}
+];
+
+const SURV=[
+ {id:'S1',name:'ABS market access',
+  kill:'A failed or materially shrunk raise is red regardless of the P&L — 2022 proved the business model pauses when this window shuts.',
+  status:'green',label:'2Q26: $3.7B across 6 deals'},
+ {id:'S2',name:'The consolidation hinge',
+  kill:'The entire off-balance-sheet structure rests on the argument that Pagaya lacks servicing power over the vehicles. Any auditor, SEC, or standard-setter pressure on the primary-beneficiary analysis inverts the balance sheet.',
+  status:'green',label:'no known challenge — verify each 10-Q VIE footnote'},
+ {id:'S3',name:'Guarantee tail',
+  kill:'Maximum exposure $141.3M; $20.9M accrued, $48.1M segregated. Red if accruals accelerate toward the cap.',
+  status:'green',label:'14.8% utilisation',derived:true},
+ {id:'S4',name:'Top-partner concentration',
+  kill:'Volume share of the largest lending partner is undisclosed, so the single largest counterparty risk cannot be sized from outside.',
+  status:'amber',label:'undisclosed — treated as risk'},
+ {id:'S5',name:'Funding-channel concentration',
+  kill:'Repeat participation and channel mix across the 174 investors is undisclosed, so it cannot be told whether the funding base is broad or a handful of desks.',
+  status:'amber',label:'undisclosed — treated as risk'}
+];
+
+const QUESTIONS=[
+ {id:'Q1',t:'Actual vs expected loss by PRT tier and vintage — the single table that would prove the model is improving.'},
+ {id:'Q2',t:'Approval rate at constant realised loss — has the credit frontier actually moved outward?'},
+ {id:'Q3',t:'New-issue spread at constant PRT mix, deal by deal.'},
+ {id:'Q4',t:'Volume per lending partner by tenure cohort — growth by logo or growth by trust?'},
+ {id:'Q5',t:'The denominator behind the "2–3x close-rate uplift" figure quoted for auto.'},
+ {id:'Q6',t:'Investor repeat-participation rate per deal, and funding-channel concentration.'},
+ {id:'Q7',t:'Applications volume as a level, not a growth rate.'}
+];
+
+const CONSTANTS=[
+ {k:'Retained book, 30 Jun 2026', v:'$1,040.1M', r:'Of which $542.1M is Dodd-Frank risk retention \u2014 mandated, not chosen. Only the remainder is a discretionary bet on its own paper.'},
+ {k:'Risk retention, mandated',   v:'$542.1M',   r:'The floor under the retained book. It does not shrink because management wants it to.'},
+ {k:'Guarantees, maximum',        v:'$141.3M',   r:'$48.1M segregated, $20.9M accrued \u2014 14.8% utilisation, derived. Monitored on the survival board.'},
+ {k:'Interest income, 2Q26',      v:'$22.2M',    r:'Earned on the retained book. Real cash, and also the compensation for carrying the risk the certificates are marked at 61.8 cents on.'},
+ {k:'Principal returned, 1H26',   v:'$365.1M',   r:'The book is self-liquidating at a rate worth tracking against new retention.'},
+ {k:'Net capital intensity, LTM', v:'~2.4% of volume', r:'Against ~7.1% gross. The gap is what the ABS market funds; it is the whole capital-light claim, and it depends on the window in survival card one staying open.'},
+ {k:'Application-to-volume conversion', v:'\u22481%', r:'Ninety-nine of every hundred applications do not become a loan. The funnel is wide by construction; it says nothing about whether the one is priced right.'},
+ {k:'Lending partners',           v:'36',        r:'Individual shares undisclosed \u2014 see survival card four.'},
+ {k:'Funding partners',           v:'174',       r:'Repeat participation undisclosed \u2014 see survival card five.'}
+];
+
+/* ---------------------------------------------------------------
+   STATE
+   --------------------------------------------------------------- */
+const KEY={q:'pgy-verdict:quarters',ev:'pgy-verdict:evidence',pr:'pgy-verdict:probability',
+ ts:'pgy-verdict:tests',fa:'pgy-verdict:falsifications',ck:'pgy-verdict:checks',
+ po:'pgy-verdict:position',iq:'pgy-verdict:interrogation'};
+
+function seedState(){
+  const s={quarters:[],evidence:SEED_EVIDENCE.map(e=>Object.assign({struck:null},e)),
+   probability:[],tests:{},falsifications:{},checks:{},
+   position:{entry:'',cost:'',weight:'',cap:'',premortem:[]},interrogation:{},vintage:[]};
+  TESTS.forEach(t=>{s.tests[t.id]={v:t.def,date:BUILD,moved:false};});
+  FALS.forEach(f=>{s.falsifications[f.id]={status:'pending',notes:[]};});
+  SURV.forEach(c=>{s.checks[c.id]={status:c.status,date:BUILD};});
+  QUESTIONS.forEach(q=>{s.interrogation[q.id]={status:'unasked',asked:'',notes:[]};});
+  return s;
+}
+let STATE=seedState();
+let STORAGE_OK=null, STORAGE_MSG='';
+
+/* ---------------------------------------------------------------
+   STORAGE - window.storage only. Never localStorage.
+   --------------------------------------------------------------- */
+function hasStore(){return typeof window!=='undefined'&&window.storage&&typeof window.storage.get==='function';}
+
+async function sget(key){
+  try{
+    if(!hasStore()) throw new Error('no storage host');
+    const raw=await window.storage.get(key);
+    if(raw==null) return null;
+    return typeof raw==='string'?JSON.parse(raw):raw;
+  }catch(e){ noteStorage(false,'read failed — '+(e&&e.message?e.message:'unknown')); return null; }
+}
+async function sset(key,val){
+  try{
+    if(!hasStore()) throw new Error('no storage host');
+    await window.storage.set(key,JSON.stringify(val));
+    noteStorage(true,'');
+    return true;
+  }catch(e){ noteStorage(false,'write failed — '+(e&&e.message?e.message:'unknown')+' — this entry is on screen only and will not survive a reload'); return false; }
+}
+async function sdel(key){
+  try{ if(!hasStore()) throw new Error('no storage host'); await window.storage.delete(key); return true; }
+  catch(e){ noteStorage(false,'delete failed — '+(e&&e.message?e.message:'unknown')); return false; }
+}
+function noteStorage(ok,msg){
+  STORAGE_OK=ok; STORAGE_MSG=msg;
+  const el=document.getElementById('storageNote'); if(!el) return;
+  el.className='storage-note'+(ok?'':' bad');
+  el.textContent=ok?('Storage: connected — entries persist under pgy-verdict:* keys.')
+    :('Storage: unavailable — '+(msg||'this host does not expose window.storage')+'. The instrument still works; the notebook does not persist.');
+}
+async function persist(k,v){ return await sset(k,v); }
+async function persistAll(){
+  await sset(KEY.q,STATE.quarters); await sset(KEY.ev,STATE.evidence);
+  await sset(KEY.pr,STATE.probability); await sset(KEY.ts,STATE.tests);
+  await sset(KEY.fa,STATE.falsifications); await sset(KEY.ck,STATE.checks);
+  await sset(KEY.po,STATE.position); await sset(KEY.iq,STATE.interrogation);
+}
+async function loadAll(){
+  const [q,ev,pr,ts,fa,ck,po,iq]=await Promise.all([
+    sget(KEY.q),sget(KEY.ev),sget(KEY.pr),sget(KEY.ts),sget(KEY.fa),sget(KEY.ck),sget(KEY.po),sget(KEY.iq)]);
+  if(Array.isArray(q)) STATE.quarters=q;
+  if(Array.isArray(ev)&&ev.length) STATE.evidence=ev;
+  if(Array.isArray(pr)) STATE.probability=pr;
+  if(ts&&typeof ts==='object') Object.keys(STATE.tests).forEach(k=>{if(ts[k])STATE.tests[k]=ts[k];});
+  if(fa&&typeof fa==='object') Object.keys(STATE.falsifications).forEach(k=>{if(fa[k])STATE.falsifications[k]=fa[k];});
+  if(ck&&typeof ck==='object') Object.keys(STATE.checks).forEach(k=>{if(ck[k])STATE.checks[k]=ck[k];});
+  if(po&&typeof po==='object') STATE.position=Object.assign(STATE.position,po);
+  if(iq&&typeof iq==='object') Object.keys(STATE.interrogation).forEach(k=>{if(iq[k])STATE.interrogation[k]=iq[k];});
+  if(STORAGE_OK===null&&hasStore()) noteStorage(true,'');
+  if(!hasStore()) noteStorage(false,'');
+}
+
+/* ---------------------------------------------------------------
+   HELPERS
+   --------------------------------------------------------------- */
+function el(t,c,txt){const n=document.createElement(t); if(c)n.className=c; if(txt!=null)n.textContent=txt; return n;}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function fx(v,d){return v==null?'n/d':Number(v).toFixed(d);}
+function nd(v,fn){return v==null?'<span class="nd">n/d</span>':fn(v);}
+function money(v,d){return v==null?'<span class="nd">n/d</span>':'$'+Number(v).toFixed(d==null?0:d)+'M';}
+function bn(v,d){return v==null?'<span class="nd">n/d</span>':'$'+Number(v).toFixed(d==null?1:d)+'B';}
+function pc(v,d){return v==null?'<span class="nd">n/d</span>':Number(v).toFixed(d==null?1:d)+'%';}
+function word(n){return ['zero','one','two','three','four','five','six','seven','eight'][n]||String(n);}
+function dISO(s){const p=String(s).split('-').map(Number); return Date.UTC(p[0],p[1]-1,p[2]);}
+function todayISO(){const d=new Date(); return new Date(d.getTime()-d.getTimezoneOffset()*6e4).toISOString().slice(0,10);}
+function daysBetween(a,b){return Math.round((dISO(b)-dISO(a))/864e5);}
+function longDate(s){
+  const M=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const p=String(s).split('-').map(Number); return p[2]+' '+M[p[1]-1]+' '+p[0];
+}
+function qk(q){const m=/^([1-4])Q(\d{2})$/.exec(String(q||'').toUpperCase()); return m?(2000+ +m[2])*4 + (+m[1]):0;}
+function uid(p){return p+'-'+Math.random().toString(36).slice(2,9);}
+
+function mergedQuarters(){
+  const map=new Map();
+  BASE.forEach(b=>map.set(b.q,Object.assign({},b)));
+  EXT.forEach(e=>{const c=map.get(e.q)||{q:e.q}; map.set(e.q,Object.assign(c,e));});
+  STATE.quarters.forEach(u=>{
+    const c=map.get(u.q)||{q:u.q};
+    Object.keys(u).forEach(k=>{ if(u[k]!=null&&u[k]!=='') c[k]=u[k]; });
+    map.set(u.q,c);
+  });
+  return Array.from(map.values()).sort((a,b)=>qk(a.q)-qk(b.q)).slice(-8);
+}
+function ratios(qs){
+  return qs.filter(x=>x.certFV!=null&&x.certAC!=null&&x.certAC!==0)
+           .map(x=>({q:x.q,v:100*x.certFV/x.certAC}));
+}
+
+/* ---------------------------------------------------------------
+   AUTOMATIC EVALUATION - falsifications F1/F2/F3 and staleness
+   --------------------------------------------------------------- */
+function evalFalsifications(){
+  const qs=mergedQuarters();
+
+  /* F2 - take rate below 4.0% for two consecutive quarters */
+  let f2=false, f2q='';
+  for(let i=1;i<qs.length;i++){
+    const a=qs[i-1],b=qs[i];
+    if(a.take!=null&&b.take!=null&&a.take<4.0&&b.take<4.0){f2=true;f2q=a.q+' and '+b.q;}
+  }
+  if(f2) breach('F2','Take rate below 4.0% in '+f2q+'.');
+
+  /* F3 - ratio declining two consecutive quarters */
+  const r=ratios(qs);
+  let f3=false,f3q='';
+  for(let i=2;i<r.length;i++){
+    if(r[i].v<r[i-1].v&&r[i-1].v<r[i-2].v){f3=true;f3q=r[i-2].q+' → '+r[i-1].q+' → '+r[i].q;}
+  }
+  if(f3) breach('F3','FV/AC ratio declined in two consecutive quarters: '+f3q+'.');
+
+  /* F1 - the 2Q27 print */
+  const p=qs.filter(x=>x.q==='2Q27')[0];
+  if(p&&p.loss!=null){
+    if(p.loss>35) breach('F1','2Q27 losses to earnings $'+fx(p.loss,0)+'M, above the $35M line.');
+    else if(STATE.falsifications.F1.status!=='BREACHED') clear('F1','2Q27 losses to earnings $'+fx(p.loss,0)+'M, at or below the $35M line.');
+  }
+}
+function breach(id,why){
+  const f=STATE.falsifications[id];
+  if(f.status==='BREACHED') return;
+  f.status='BREACHED';
+  f.notes.push({date:todayISO(),text:'Breached automatically on data entry. '+why,auto:true});
+  persist(KEY.fa,STATE.falsifications);
+}
+function clear(id,why){
+  const f=STATE.falsifications[id];
+  if(f.status==='cleared') return;
+  f.status='cleared';
+  f.notes.push({date:todayISO(),text:'Cleared automatically on data entry. '+why,auto:true});
+  persist(KEY.fa,STATE.falsifications);
+}
+function anyBreach(){return Object.keys(STATE.falsifications).some(k=>STATE.falsifications[k].status==='BREACHED');}
+function effStatus(id){
+  const c=STATE.checks[id]; const age=daysBetween(c.date,todayISO());
+  if(c.status==='red') return {s:'red',stale:age>STALE_DAYS,age:age};
+  if(age>STALE_DAYS) return {s:'amber',stale:true,age:age};
+  return {s:c.status,stale:false,age:age};
+}
+function anyRedSurvival(){return SURV.some(c=>effStatus(c.id).s==='red');}
+function countVerdict(v){return TESTS.filter(t=>STATE.tests[t.id].v===v).length;}
+function activeProb(){const p=STATE.probability.filter(x=>!x.struck); return p.length?p[p.length-1]:null;}
+
+/* ---------------------------------------------------------------
+   RENDER - header, probability
+   --------------------------------------------------------------- */
+function renderDue(){
+  const d=daysBetween(todayISO(),NEXT_UPDATE.date);
+  const box=document.getElementById('dueBox');
+  box.innerHTML='<div class="t">Next update due</div>'+
+   '<div class="v">'+esc(NEXT_UPDATE.label)+'</div>'+
+   '<div class="meta" style="margin-top:3px">Estimated '+longDate(NEXT_UPDATE.date)+'</div>'+
+   '<div class="meta" style="color:var(--amber)">'+(d>=0?d+' days out':Math.abs(d)+' days overdue')+'</div>';
+}
+
+function renderProb(){
+  const box=document.getElementById('probStrip');
+  const cur=activeProb();
+  let h='';
+  if(!cur){
+    box.className='prob nag';
+    h+='<div class="prob-row"><span class="big">P(H1) = __%</span>'+
+       '<span class="chip c-amber">not yet posted</span></div>'+
+       '<p class="nagline">Post a number. An unposted probability is a thesis with no price on it, and this instrument will keep saying so. Nothing here will suggest one for you.</p>';
+  }else{
+    box.className='prob';
+    h+='<div class="prob-row"><span class="big">P(H1) = '+fx(cur.v,0)+'%</span>'+
+       '<span class="stamp">posted '+longDate(cur.date)+'</span>'+
+       '<span class="stamp">'+daysBetween(cur.date,todayISO())+' days standing</span></div>';
+  }
+  h+='<div style="display:flex;gap:9px;align-items:flex-end;flex-wrap:wrap;margin-top:10px">'+
+     '<label><span class="lab">'+(cur?'Revise to':'Post P(H1)')+' &mdash; whole %</span>'+
+     '<input id="probIn" type="number" min="0" max="100" step="1" size="5"></label>'+
+     '<button type="button" id="probBtn">'+(cur?'Revise':'Post')+'</button>'+
+     '<span class="meta">Revisions append. The old value is struck, not replaced.</span></div>';
+  const hist=STATE.probability;
+  if(hist.length){
+    h+='<ul class="revlist">';
+    for(let i=hist.length-1;i>=0;i--){
+      const p=hist[i];
+      h+='<li><span class="stamp">'+p.date+'</span>'+
+         '<span class="'+(p.struck?'strike':'')+'">P(H1) = '+fx(p.v,0)+'%</span>'+
+         (p.struck?'<span class="stamp">superseded '+p.struck+'</span>':'<span class="chip c-ink">standing</span>')+
+         '</li>';
+    }
+    h+='</ul>';
+  }
+  box.innerHTML=h;
+  document.getElementById('probBtn').onclick=async()=>{
+    const v=parseFloat(document.getElementById('probIn').value);
+    if(!isFinite(v)||v<0||v>100) return;
+    const t=todayISO();
+    STATE.probability.forEach(p=>{if(!p.struck)p.struck=t;});
+    STATE.probability.push({date:t,v:v,struck:null});
+    await persist(KEY.pr,STATE.probability);
+    renderProb();
+  };
+}
+
+/* ---------------------------------------------------------------
+   RENDER - evidence ledger
+   --------------------------------------------------------------- */
+function renderEvidence(){
+  const live=STATE.evidence.filter(e=>!e.struck);
+  const sum=f=>live.filter(e=>e.file===f).reduce((a,e)=>a+Number(e.w),0);
+  const t=document.getElementById('tally');
+  t.innerHTML=
+   '<div class="t a"><div class="stamp" style="color:var(--h1)">Weighted for H1</div><div class="v" style="color:var(--h1)">'+sum('h1')+'</div><div class="meta">'+live.filter(e=>e.file==='h1').length+' live entries</div></div>'+
+   '<div class="t b"><div class="stamp" style="color:var(--h2)">Weighted for H2</div><div class="v" style="color:var(--h2)">'+sum('h2')+'</div><div class="meta">'+live.filter(e=>e.file==='h2').length+' live entries</div></div>'+
+   '<div class="t c"><div class="stamp">Contested</div><div class="v">'+sum('contested')+'</div><div class="meta">'+live.filter(e=>e.file==='contested').length+' live entries</div></div>'+
+   '<div class="t c"><div class="stamp">Neutral</div><div class="v">'+sum('neutral')+'</div><div class="meta">'+live.filter(e=>e.file==='neutral').length+' live entries</div></div>'+
+   '<div class="t c"><div class="stamp">Struck</div><div class="v">'+STATE.evidence.filter(e=>e.struck).length+'</div><div class="meta">retained on the record</div></div>';
+
+  const chipFor=f=>({h1:'<span class="chip c-h1">H1</span>',h2:'<span class="chip c-h2">H2</span>',
+    contested:'<span class="chip c-open">contested</span>',neutral:'<span class="chip c-open">neutral</span>'}[f]);
+  let h='<thead><tr><th style="width:80px">Entered</th><th style="width:52px">Qtr</th><th>Evidence</th><th style="width:88px">Files under</th><th style="width:48px">Wt</th><th style="width:180px">Record</th></tr></thead><tbody>';
+  const rows=STATE.evidence.slice().sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:0);
+  rows.forEach(e=>{
+    h+='<tr class="'+(e.struck?'struck':'')+'" data-ev="'+e.id+'">'+
+       '<td><span class="stamp">'+e.date+'</span></td>'+
+       '<td class="mono">'+esc(e.q)+'</td>'+
+       '<td class="ser">'+esc(e.text)+'</td>'+
+       '<td>'+chipFor(e.file)+'</td>'+
+       '<td class="num mono">'+e.w+'</td>'+
+       '<td>'+(e.struck
+          ? '<span class="stamp">struck '+e.struck+'</span><div class="meta" style="text-transform:none;font-size:10.5px;margin-top:2px">'+esc(e.reason||'')+'</div>'
+          : '<button class="ghost tiny" data-strike="'+e.id+'">Strike</button>'+
+            '<div class="strikeform" style="display:none;margin-top:5px"><input data-reason="'+e.id+'" placeholder="reason, one line" size="18"> <button class="tiny" data-confirm="'+e.id+'">Confirm</button></div>')+
+       '</td></tr>';
+  });
+  h+='</tbody>';
+  const tb=document.getElementById('evTable');
+  tb.innerHTML=h;
+  tb.querySelectorAll('[data-strike]').forEach(b=>{
+    b.onclick=()=>{ const f=b.parentNode.querySelector('.strikeform'); f.style.display='block'; b.style.display='none'; f.querySelector('input').focus(); };
+  });
+  tb.querySelectorAll('[data-confirm]').forEach(b=>{
+    b.onclick=async()=>{
+      const id=b.getAttribute('data-confirm');
+      const inp=tb.querySelector('[data-reason="'+id+'"]');
+      const reason=inp.value.trim();
+      if(!reason){ inp.style.borderColor='var(--amber)'; inp.placeholder='a reason is required'; return; }
+      const e=STATE.evidence.filter(x=>x.id===id)[0];
+      e.struck=todayISO(); e.reason=reason;
+      await persist(KEY.ev,STATE.evidence);
+      renderEvidence();
+    };
+  });
+}
+
+/* ---------------------------------------------------------------
+   RENDER - discriminating tests
+   --------------------------------------------------------------- */
+function renderTests(){
+  const qs=mergedQuarters();
+  let h='<thead><tr><th style="width:34px">#</th><th style="width:170px">Test</th><th>H1 predicts</th><th>H2 predicts</th><th style="width:200px">Latest reading</th><th style="width:190px">Verdict to date</th></tr></thead><tbody>';
+  TESTS.forEach(t=>{
+    const st=STATE.tests[t.id];
+    const showNote=(!st.moved&&t.note)?' <span class="meta" style="text-transform:none">&mdash; '+esc(t.note)+'</span>':'';
+    h+='<tr><td class="mono" style="color:var(--muted)">'+t.id+'</td>'+
+       '<td><strong style="font-family:\'Barlow Condensed\',sans-serif;letter-spacing:.04em;text-transform:uppercase">'+esc(t.name)+'</strong></td>'+
+       '<td class="ser" style="color:var(--h1)">'+esc(t.h1)+'</td>'+
+       '<td class="ser" style="color:var(--h2)">'+esc(t.h2)+'</td>'+
+       '<td class="mono">'+esc(t.read(qs))+'</td>'+
+       '<td><div class="toggle" data-t="'+t.id+'">'+
+         '<button type="button" class="'+(st.v==='h1'?'on h1':'')+'" data-v="h1">leaning H1</button>'+
+         '<button type="button" class="'+(st.v==='open'?'on':'')+'" data-v="open">open</button>'+
+         '<button type="button" class="'+(st.v==='h2'?'on h2':'')+'" data-v="h2">leaning H2</button>'+
+       '</div><div class="stamp" style="margin-top:3px">set '+st.date+showNote+'</div></td></tr>';
+  });
+  h+='</tbody>';
+  const tb=document.getElementById('testTable');
+  tb.innerHTML=h;
+  tb.querySelectorAll('.toggle button').forEach(b=>{
+    b.onclick=async()=>{
+      const id=b.parentNode.getAttribute('data-t'), v=b.getAttribute('data-v');
+      const st=STATE.tests[id];
+      if(st.v===v) return;
+      st.v=v; st.date=todayISO(); st.moved=true;
+      await persist(KEY.ts,STATE.tests);
+      renderTests(); renderRules();
+    };
+  });
+  const n=countVerdict('h2');
+  document.getElementById('testCount').innerHTML=
+    n+' of '+TESTS.length+' tests currently read leaning H2; '+countVerdict('h1')+' read leaning H1. Rule R2 fires at three.';
+}
+
+/* ---------------------------------------------------------------
+   RENDER - timing chart (paired bars, no cumulative line)
+   --------------------------------------------------------------- */
+function renderTiming(){
+  const qs=mergedQuarters();
+  const W=680,H=250,padL=40,padR=10,padT=14,padB=46;
+  const iw=W-padL-padR, ih=H-padT-padB;
+  let max=0; qs.forEach(x=>{if(x.frlpc!=null)max=Math.max(max,x.frlpc); if(x.loss!=null)max=Math.max(max,x.loss);});
+  max=Math.ceil((max||1)/25)*25;
+  const step=iw/qs.length, bw=Math.min(26,step/3.2);
+  let s='<svg class="chart" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="FRLPC against losses to earnings by quarter">';
+  for(let g=0;g<=4;g++){
+    const v=max*g/4, y=padT+ih-(v/max)*ih;
+    s+='<line x1="'+padL+'" y1="'+y+'" x2="'+(W-padR)+'" y2="'+y+'" stroke="#C7CDC4" stroke-width="1"/>';
+    s+='<text x="'+(padL-6)+'" y="'+(y+3)+'" text-anchor="end" font-family="IBM Plex Mono,monospace" font-size="8.5" fill="#5A6472">'+v.toFixed(0)+'</text>';
+  }
+  qs.forEach((x,i)=>{
+    const cx=padL+step*i+step/2;
+    const x1=cx-bw-3, x2=cx+3;
+    if(x.frlpc!=null){
+      const hh=(x.frlpc/max)*ih;
+      s+='<rect x="'+x1+'" y="'+(padT+ih-hh)+'" width="'+bw+'" height="'+hh+'" fill="#14202F"/>';
+      s+='<text x="'+(x1+bw/2)+'" y="'+(padT+ih-hh-4)+'" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="8.5" fill="#14202F">'+x.frlpc+'</text>';
+    }else{
+      s+='<rect x="'+x1+'" y="'+(padT+ih-8)+'" width="'+bw+'" height="8" fill="none" stroke="#C7CDC4" stroke-width="1" stroke-dasharray="2 2"/>';
+      s+='<text x="'+(x1+bw/2)+'" y="'+(padT+ih-13)+'" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="8" fill="#5A6472">n/d</text>';
+    }
+    if(x.loss!=null){
+      const hh=(x.loss/max)*ih;
+      s+='<rect x="'+x2+'" y="'+(padT+ih-hh)+'" width="'+bw+'" height="'+hh+'" fill="none" stroke="#8A4B12" stroke-width="1.5"/>';
+      s+='<rect x="'+x2+'" y="'+(padT+ih-hh)+'" width="'+bw+'" height="'+hh+'" fill="url(#hatch)"/>';
+      s+='<text x="'+(x2+bw/2)+'" y="'+(padT+ih-hh-4)+'" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="8.5" fill="#8A4B12">'+x.loss+'</text>';
+    }else{
+      s+='<rect x="'+x2+'" y="'+(padT+ih-8)+'" width="'+bw+'" height="8" fill="none" stroke="#C7CDC4" stroke-width="1" stroke-dasharray="2 2"/>';
+      s+='<text x="'+(x2+bw/2)+'" y="'+(padT+ih-13)+'" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="8" fill="#5A6472">n/d</text>';
+    }
+    s+='<text x="'+cx+'" y="'+(padT+ih+15)+'" text-anchor="middle" font-family="Barlow Condensed,sans-serif" font-weight="700" font-size="12" fill="#14202F">'+esc(x.q)+'</text>';
+  });
+  s+='<line x1="'+padL+'" y1="'+(padT+ih)+'" x2="'+(W-padR)+'" y2="'+(padT+ih)+'" stroke="#14202F" stroke-width="1.5"/>';
+  s+='<defs><pattern id="hatch" width="5" height="5" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">'+
+     '<line x1="0" y1="0" x2="0" y2="5" stroke="#8A4B12" stroke-width="2"/></pattern></defs>';
+  s+='<text x="'+padL+'" y="'+(H-8)+'" font-family="IBM Plex Mono,monospace" font-size="8.5" fill="#5A6472" letter-spacing="1">$M PER QUARTER</text>';
+  s+='</svg>';
+  document.getElementById('timingChart').innerHTML=s;
+}
+
+/* ---------------------------------------------------------------
+   RENDER - vintage table
+   --------------------------------------------------------------- */
+function renderVintage(){
+  const box=document.getElementById('vintageBlock');
+  let h='';
+  if(!STATE.vintage.length){
+    h+='<div class="empty">No vintage rows entered. Extract from ABS trustee reports and rating-agency surveillance (e.g. KBRA, DBRS Morningstar presale and surveillance reports); never estimate. An empty table here is itself a finding &mdash; the issuer does not publish this.</div>';
+  }else{
+    h+='<div class="scroll"><table><thead><tr><th>Vintage year</th><th>Origination volume</th><th>Cumulative net loss</th><th>% past peak-loss window</th><th>Source</th><th>Entered</th></tr></thead><tbody>';
+    STATE.vintage.forEach(v=>{
+      h+='<tr><td class="mono">'+esc(v.year)+'</td><td class="mono num">'+esc(v.vol)+'</td><td class="mono num">'+esc(v.loss)+'</td><td class="mono num">'+esc(v.pct)+'</td><td class="ser">'+esc(v.src)+'</td><td><span class="stamp">'+v.date+'</span></td></tr>';
+    });
+    h+='</tbody></table></div>';
+  }
+  h+='<form class="formrow" id="vinForm" style="margin-top:11px">'+
+     '<label style="flex:0 0 80px"><span class="lab">Vintage</span><input id="vinYear" size="5" required></label>'+
+     '<label style="flex:0 0 110px"><span class="lab">Origination</span><input id="vinVol" size="8" placeholder="$B"></label>'+
+     '<label style="flex:0 0 120px"><span class="lab">Cum. net loss</span><input id="vinLoss" size="8" placeholder="%"></label>'+
+     '<label style="flex:0 0 120px"><span class="lab">% past peak</span><input id="vinPct" size="6" placeholder="%"></label>'+
+     '<label class="grow"><span class="lab">Source &mdash; report and date</span><input id="vinSrc" required></label>'+
+     '<button type="submit">Add row</button></form>';
+  box.innerHTML=h;
+  document.getElementById('vinForm').onsubmit=async ev=>{
+    ev.preventDefault();
+    STATE.vintage.push({year:document.getElementById('vinYear').value.trim(),
+      vol:document.getElementById('vinVol').value.trim()||'n/d',
+      loss:document.getElementById('vinLoss').value.trim()||'n/d',
+      pct:document.getElementById('vinPct').value.trim()||'n/d',
+      src:document.getElementById('vinSrc').value.trim(),date:todayISO()});
+    await sset('pgy-verdict:vintage',STATE.vintage);
+    renderVintage();
+  };
+}
+
+/* ---------------------------------------------------------------
+   RENDER - falsification board
+   --------------------------------------------------------------- */
+function renderFals(){
+  const box=document.getElementById('falsBoard');
+  let h='';
+  FALS.forEach(f=>{
+    const st=STATE.falsifications[f.id];
+    const cls='card'+(st.status==='BREACHED'?' breached':'');
+    const chip=st.status==='BREACHED'?'<span class="chip c-breach">breached</span>'
+      :st.status==='cleared'?'<span class="chip c-verify">cleared</span>'
+      :'<span class="chip c-open">pending</span>';
+    h+='<article class="'+cls+'">'+
+       '<div class="top"><h4>'+f.id+' &middot; '+esc(f.title)+'</h4>'+chip+'</div>'+
+       '<p>'+esc(f.claim)+'</p>'+
+       '<div class="meta" style="margin-top:7px;text-transform:none">Trigger: '+esc(f.trigger)+
+         (f.est?' <span class="derived">date estimated</span>':'')+'</div>';
+    if(f.date){
+      const d=daysBetween(todayISO(),f.date);
+      h+='<div class="meta" style="color:var(--amber)">'+(d>=0?d+' days to the test date':Math.abs(d)+' days past the test date')+' &middot; '+longDate(f.date)+'</div>';
+    }
+    if(st.notes.length){
+      h+='<ul class="notes">';
+      st.notes.forEach(n=>{h+='<li><span class="stamp">'+n.date+(n.auto?' &middot; automatic':' &middot; adjudication')+'</span><br>'+esc(n.text)+'</li>';});
+      h+='</ul>';
+    }
+    h+='<div class="foot"><span class="stamp">created '+BUILD+' &middot; immutable</span>'+
+       '<span>'+(f.event&&st.status!=='BREACHED'?'<button class="ghost tiny" data-fire="'+f.id+'">Record event</button> ':'')+
+       '<button class="ghost tiny" data-adj="'+f.id+'">Adjudicate</button></span></div>'+
+       '<div class="adjform" data-form="'+f.id+'" style="display:none;margin-top:7px">'+
+       '<input data-note="'+f.id+'" placeholder="dated note, appended not replacing" style="width:70%"> '+
+       '<button class="tiny" data-save="'+f.id+'">Append</button></div>'+
+       '</article>';
+  });
+  box.innerHTML=h;
+  box.querySelectorAll('[data-adj]').forEach(b=>{
+    b.onclick=()=>{const id=b.getAttribute('data-adj');box.querySelector('[data-form="'+id+'"]').style.display='block';};
+  });
+  box.querySelectorAll('[data-save]').forEach(b=>{
+    b.onclick=async()=>{
+      const id=b.getAttribute('data-save');
+      const inp=box.querySelector('[data-note="'+id+'"]');
+      const t=inp.value.trim(); if(!t){inp.style.borderColor='var(--amber)';return;}
+      STATE.falsifications[id].notes.push({date:todayISO(),text:t});
+      await persist(KEY.fa,STATE.falsifications);
+      renderFals(); renderRules();
+    };
+  });
+  box.querySelectorAll('[data-fire]').forEach(b=>{
+    b.onclick=async()=>{
+      const id=b.getAttribute('data-fire');
+      breach(id,'Event recorded by the holder.');
+      await persist(KEY.fa,STATE.falsifications);
+      renderFals(); renderRules();
+    };
+  });
+}
+
+/* ---------------------------------------------------------------
+   RENDER - panel 3, the one independent price
+   --------------------------------------------------------------- */
+function renderPrice(){
+  const qs=mergedQuarters();
+  const r=ratios(qs);
+  const latest=r.length?r[r.length-1]:null;
+  let h='<div class="headline">'+
+    '<div class="fig">'+(latest?fx(latest.v,1)+'%':'n/d')+'</div>'+
+    '<div class="side">'+
+      '<div class="meta">Certificate fair value / amortized cost'+(latest?' &middot; '+esc(latest.q):'')+
+      '<span class="derived">derived</span></div>'+
+      (latest?'<div class="mono" style="margin-top:4px">'+money(qs.filter(x=>x.q===latest.q)[0].certFV,1)+' fair value &divide; '+money(qs.filter(x=>x.q===latest.q)[0].certAC,1)+' amortized cost</div>':'')+
+      '<p class="interp">The only external grade on the model. Amortized cost is management\'s number; fair value is the market\'s. The gap is the market\'s running estimate of how wrong the marks are.</p>'+
+    '</div></div>';
+  h+='<div class="trendrow">';
+  qs.forEach(x=>{
+    const has=(x.certFV!=null&&x.certAC!=null&&x.certAC!==0);
+    h+='<div class="slot'+(has?' has':'')+'"><div class="q">'+esc(x.q)+'</div>'+
+       '<div class="v">'+(has?fx(100*x.certFV/x.certAC,1)+'%':'<span class="nd">n/d</span>')+'</div></div>';
+  });
+  h+='</div>';
+  document.getElementById('fvacBlock').innerHTML=h;
+
+  /* ABS execution */
+  let a='<div class="scroll"><table><thead><tr><th>Quarter</th><th class="num">Raised</th><th class="num">Deals</th><th class="num">Spread vs benchmark</th></tr></thead><tbody>';
+  qs.forEach(x=>{
+    a+='<tr><td class="mono">'+esc(x.q)+'</td>'+
+       '<td class="num mono">'+bn(x.abs)+'</td>'+
+       '<td class="num mono">'+(x.absDeals==null?'<span class="nd">n/d</span>':x.absDeals)+'</td>'+
+       '<td class="num mono">'+(x.absSpread==null?'<span class="nd">n/d</span>':x.absSpread+'bps')+'</td></tr>';
+  });
+  a+='</tbody></table></div>'+
+     '<p class="interp">Each new deal is the market re-underwriting the model at arm\'s length. Spread at constant PRT mix is the purest read that exists. Spread is entered per deal from presale and surveillance reports; it is not in the issuer\'s quarterly disclosure.</p>';
+  document.getElementById('absBlock').innerHTML=a;
+
+  /* related-party fee share */
+  let p='<div class="trendrow">';
+  qs.forEach(x=>{
+    const has=x.rpShare!=null;
+    p+='<div class="slot'+(has?' has':'')+'"><div class="q">'+esc(x.q)+'</div>'+
+       '<div class="v">'+(has?fx(x.rpShare,0)+'%':'<span class="nd">n/d</span>')+'</div></div>';
+  });
+  p+='</div><p class="interp">The share of fee revenue billed to vehicles Pagaya itself sponsors or administers. Falling means third-party conviction; high and flat means the machine partly pays itself.</p>';
+  document.getElementById('rpBlock').innerHTML=p;
+}
+
+/* ---------------------------------------------------------------
+   RENDER - survival board
+   --------------------------------------------------------------- */
+function renderSurv(){
+  const box=document.getElementById('survBoard');
+  let h='';
+  SURV.forEach(c=>{
+    const st=effStatus(c.id);
+    const cls='card'+(st.s==='red'?' redstat':st.s==='amber'?' amberstat':'');
+    const chip=st.s==='red'?'<span class="chip c-breach">red</span>'
+      :st.s==='amber'?'<span class="chip c-amber">amber</span>'
+      :'<span class="chip c-verify">green</span>';
+    h+='<article class="'+cls+'">'+
+       '<div class="top"><h4>'+esc(c.name)+'</h4>'+chip+(st.stale?' <span class="chip c-amber">stale</span>':'')+'</div>'+
+       '<p>'+esc(c.kill)+'</p>'+
+       '<div class="meta" style="margin-top:7px;text-transform:none">'+esc(c.label)+(c.derived?'<span class="derived">derived</span>':'')+'</div>'+
+       '<div class="foot"><span class="stamp">checked '+STATE.checks[c.id].date+' &middot; '+st.age+'d ago'+(st.stale?' &middot; over '+STALE_DAYS+'d':'')+'</span>'+
+       '<span><select data-st="'+c.id+'">'+
+         ['green','amber','red'].map(v=>'<option value="'+v+'"'+(STATE.checks[c.id].status===v?' selected':'')+'>'+v+'</option>').join('')+
+       '</select> <button class="ghost tiny" data-ck="'+c.id+'">Checked today</button></span></div></article>';
+  });
+  box.innerHTML=h;
+  box.querySelectorAll('[data-ck]').forEach(b=>{
+    b.onclick=async()=>{ STATE.checks[b.getAttribute('data-ck')].date=todayISO();
+      await persist(KEY.ck,STATE.checks); renderSurv(); renderRules(); };
+  });
+  box.querySelectorAll('[data-st]').forEach(s=>{
+    s.onchange=async()=>{ STATE.checks[s.getAttribute('data-st')].status=s.value;
+      STATE.checks[s.getAttribute('data-st')].date=todayISO();
+      await persist(KEY.ck,STATE.checks); renderSurv(); renderRules(); };
+  });
+}
+
+/* ---------------------------------------------------------------
+   RENDER - position ledger and the mechanical rules
+   --------------------------------------------------------------- */
+function posEmpty(){const p=STATE.position; return !p.entry&&!p.cost&&!p.weight&&!p.cap;}
+
+function renderPosition(){
+  const p=STATE.position;
+  let h='';
+  if(posEmpty()){
+    h+='<div class="empty">No position on record. This instrument adjudicates a speculation; it does not verify a compounder. Doctrine: asymmetric satellite, sized for total loss, never core.</div>';
+  }else{
+    h+='<div class="tally">'+
+      '<div class="t c"><div class="stamp">Entry date</div><div class="v" style="font-size:17px">'+(p.entry?esc(p.entry):'<span class="nd">n/d</span>')+'</div></div>'+
+      '<div class="t c"><div class="stamp">Average cost</div><div class="v">'+(p.cost?esc(p.cost):'<span class="nd">n/d</span>')+'</div></div>'+
+      '<div class="t c"><div class="stamp">Position weight</div><div class="v">'+(p.weight?esc(p.weight)+'%':'<span class="nd">n/d</span>')+'</div></div>'+
+      '<div class="t c"><div class="stamp">Hard cap</div><div class="v">'+(p.cap?esc(p.cap)+'%':'<span class="nd">n/d</span>')+'</div></div>'+
+      '</div>';
+  }
+  h+='<form class="formrow" id="posForm">'+
+     '<label><span class="lab">Entry date</span><input id="posEntry" type="date" value="'+esc(p.entry||'')+'"></label>'+
+     '<label><span class="lab">Average cost</span><input id="posCost" size="8" value="'+esc(p.cost||'')+'"></label>'+
+     '<label><span class="lab">Weight % of portfolio</span><input id="posW" size="6" value="'+esc(p.weight||'')+'"></label>'+
+     '<label><span class="lab">Hard cap %</span><input id="posCap" size="6" value="'+esc(p.cap||'')+'"></label>'+
+     '<button type="submit">Record</button></form>';
+  document.getElementById('posBlock').innerHTML=h;
+  document.getElementById('posForm').onsubmit=async ev=>{
+    ev.preventDefault();
+    p.entry=document.getElementById('posEntry').value.trim();
+    p.cost=document.getElementById('posCost').value.trim();
+    p.weight=document.getElementById('posW').value.trim();
+    p.cap=document.getElementById('posCap').value.trim();
+    await persist(KEY.po,STATE.position);
+    renderPosition(); renderRules();
+  };
+}
+
+function renderPremortem(){
+  const p=STATE.position;
+  let h='';
+  if(!p.premortem.length){
+    h+='<div class="empty">No pre-mortem written. Write the obituary before the position needs one: it is 2029, the position is down 80%, and the reason is already visible today.</div>';
+  }else{
+    h+='<ul class="notes" style="margin-top:0">';
+    p.premortem.slice().reverse().forEach(n=>{h+='<li><span class="stamp">'+n.date+'</span><br>'+esc(n.text)+'</li>';});
+    h+='</ul>';
+  }
+  h+='<form id="pmForm" style="margin-top:11px"><textarea id="pmText" rows="3" placeholder="Appended, never edited. What is already true today that would explain the loss?"></textarea>'+
+     '<div style="margin-top:7px"><button type="submit">Append entry</button></div></form>';
+  document.getElementById('premortem').innerHTML=h;
+  document.getElementById('pmForm').onsubmit=async ev=>{
+    ev.preventDefault();
+    const t=document.getElementById('pmText').value.trim(); if(!t) return;
+    STATE.position.premortem.push({date:todayISO(),text:t});
+    await persist(KEY.po,STATE.position);
+    renderPremortem();
+  };
+}
+
+function renderRules(){
+  const breached=anyBreach();
+  const h2n=countVerdict('h2'), h1n=countVerdict('h1');
+  const red=anyRedSurvival();
+  const capSet=!!(STATE.position.cap&&String(STATE.position.cap).trim());
+
+  let banners='';
+  if(breached) banners+='<div class="banner">Adds locked &mdash; falsification breached</div>';
+  if(h2n>=3) banners+='<div class="banner">Exit review &mdash; no re-litigation. The tests were written before the answer arrived.</div>';
+  document.getElementById('ruleBanners').innerHTML=banners;
+
+  const rules=[
+    {id:'R1',lamp:breached?'on-breach':'',
+     text:'Any falsification card reading BREACHED locks adds.',
+     stat:breached?('active — '+FALS.filter(f=>STATE.falsifications[f.id].status==='BREACHED').map(f=>f.id).join(', ')+' breached'):'not triggered — no card breached'},
+    {id:'R2',lamp:h2n>=3?'on-breach':'',
+     text:'Three or more discriminating tests reading leaning H2 opens an exit review.',
+     stat:h2n+' of '+TESTS.length+' reading leaning H2'+(h2n>=3?' — fired':' — fires at three')},
+    {id:'R3',lamp:(h1n>0&&!breached&&capSet)?'on-green':(h1n>0&&!breached?'on-amber':''),
+     text:'Tests reading leaning H1 with no breaches permit adds, to the hard cap only.',
+     stat:breached?'suppressed — a falsification is breached'
+       :h1n===0?'not available — no test reads leaning H1'
+       :capSet?('permitted to the '+esc(STATE.position.cap)+'% cap')
+       :'cap not set — the lamp cannot go green until the hard cap is on record'},
+    {id:'R4',lamp:(breached||red)?'on-breach':'',
+     text:'Averaging down is disallowed while any falsification is breached or any survival card is red.',
+     stat:(breached||red)?('active — '+(breached?'breach on the board':'')+(breached&&red?' and ':'')+(red?'red survival card':'')):'not triggered — no breach, no red card'}
+  ];
+  let h='';
+  rules.forEach(r=>{
+    h+='<li><span class="lamp '+r.lamp+'"></span><div><div class="rtext"><span class="rid">'+r.id+'</span>'+r.text+'</div>'+
+       '<div class="rstat">'+r.stat+'</div></div></li>';
+  });
+  document.getElementById('ruleList').innerHTML=h;
+}
+
+/* ---------------------------------------------------------------
+   RENDER - per-share strip
+   --------------------------------------------------------------- */
+function renderShare(){
+  const qs=mergedQuarters();
+  let h='<thead><tr><th>Quarter</th><th class="num">Diluted shares, M</th><th class="num">Stock-based comp, $M</th><th class="num">GAAP diluted EPS, $</th><th class="num">GAAP net income, $M</th></tr></thead><tbody>';
+  qs.forEach(x=>{
+    h+='<tr><td class="mono">'+esc(x.q)+'</td>'+
+       '<td class="num mono">'+(x.sharesDil==null?'<span class="nd">n/d</span>':fx(x.sharesDil,1))+'</td>'+
+       '<td class="num mono">'+(x.sbc==null?'<span class="nd">n/d</span>':'$'+fx(x.sbc,1))+'</td>'+
+       '<td class="num mono">'+(x.epsDil==null?'<span class="nd">n/d</span>':'$'+fx(x.epsDil,2))+'</td>'+
+       '<td class="num mono">'+money(x.ni)+'</td></tr>';
+  });
+  h+='</tbody>';
+  document.getElementById('shareTable').innerHTML=h;
+}
+
+/* ---------------------------------------------------------------
+   RENDER - interrogation list
+   --------------------------------------------------------------- */
+function renderInterrogation(){
+  let h='<thead><tr><th style="width:34px">#</th><th>Question</th><th style="width:96px">Asked</th><th style="width:150px">Status</th><th style="width:230px">Answer note</th></tr></thead><tbody>';
+  QUESTIONS.forEach(q=>{
+    const s=STATE.interrogation[q.id];
+    const open=(s.status==='unasked'||s.status==='asked');
+    const from=s.asked||BUILD;
+    const age=daysBetween(from,todayISO());
+    const chip={unasked:'<span class="chip c-amber">unasked</span>',asked:'<span class="chip c-amber">asked</span>',
+      answered:'<span class="chip c-verify">answered</span>',refused:'<span class="chip c-h2">refused</span>'}[s.status];
+    h+='<tr><td class="mono" style="color:var(--muted)">'+q.id+'</td>'+
+       '<td class="ser">'+esc(q.t)+
+         (open?'<div class="meta" style="color:var(--amber);margin-top:3px">unanswered '+age+' days'+(s.asked?' since asked':' since logged')+'</div>':'')+'</td>'+
+       '<td>'+(s.asked?'<span class="stamp">'+s.asked+'</span>':'<span class="nd">&mdash;</span>')+'</td>'+
+       '<td>'+chip+'<div style="margin-top:4px"><select data-iq="'+q.id+'">'+
+         ['unasked','asked','answered','refused'].map(v=>'<option value="'+v+'"'+(s.status===v?' selected':'')+'>'+v+'</option>').join('')+
+       '</select></div></td>'+
+       '<td>'+(s.notes.length?'<ul class="notes" style="margin-top:0">'+s.notes.map(n=>'<li><span class="stamp">'+n.date+'</span><br>'+esc(n.text)+'</li>').join('')+'</ul>':'')+
+         '<div style="margin-top:5px"><input data-note="'+q.id+'" placeholder="dated note" size="16"> <button class="tiny" data-add="'+q.id+'">Append</button></div></td></tr>';
+  });
+  h+='</tbody>';
+  const tb=document.getElementById('intTable');
+  tb.innerHTML=h;
+  tb.querySelectorAll('[data-iq]').forEach(s=>{
+    s.onchange=async()=>{
+      const id=s.getAttribute('data-iq'), st=STATE.interrogation[id];
+      st.status=s.value;
+      if(s.value!=='unasked'&&!st.asked) st.asked=todayISO();
+      await persist(KEY.iq,STATE.interrogation);
+      renderInterrogation();
+    };
+  });
+  tb.querySelectorAll('[data-add]').forEach(b=>{
+    b.onclick=async()=>{
+      const id=b.getAttribute('data-add');
+      const inp=tb.querySelector('[data-note="'+id+'"]');
+      const t=inp.value.trim(); if(!t){inp.style.borderColor='var(--amber)';return;}
+      STATE.interrogation[id].notes.push({date:todayISO(),text:t});
+      await persist(KEY.iq,STATE.interrogation);
+      renderInterrogation();
+    };
+  });
+}
+
+/* ---------------------------------------------------------------
+   RENDER - appendix
+   --------------------------------------------------------------- */
+function spark(qs,key,fmt){
+  const vals=qs.map(x=>x[key]);
+  const nums=vals.filter(v=>v!=null);
+  const max=nums.length?Math.max.apply(null,nums):1;
+  const W=180,H=38,n=vals.length,bw=W/n-4;
+  let s='<svg class="chart" viewBox="0 0 '+W+' '+H+'">';
+  vals.forEach((v,i)=>{
+    const x=i*(W/n)+2;
+    if(v==null){
+      s+='<rect x="'+x+'" y="'+(H-6)+'" width="'+bw+'" height="5" fill="none" stroke="#C7CDC4" stroke-dasharray="2 2" stroke-width="1"/>';
+      s+='<text x="'+(x+bw/2)+'" y="'+(H-9)+'" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="7" fill="#5A6472">n/d</text>';
+    }else{
+      const hh=Math.max(2,(v/max)*(H-8));
+      s+='<rect x="'+x+'" y="'+(H-hh)+'" width="'+bw+'" height="'+hh+'" fill="#14202F"/>';
+    }
+  });
+  s+='</svg>';
+  return s;
+}
+function renderAppendix(){
+  const qs=mergedQuarters();
+  const last=k=>{const s=qs.filter(x=>x[k]!=null); return s.length?s[s.length-1]:null;};
+  const cards=[
+    {k:'take',  name:'Take rate',            fmt:v=>pc(v.take,1),      read:'Falling — files under H2 until a mix disclosure says otherwise.'},
+    {k:'frlpc', name:'FRLPC',                fmt:v=>money(v.frlpc),    read:'Rising with volume; says nothing about price per unit.'},
+    {k:'book',  name:'Retained book',        fmt:v=>money(v.book),     read:'Growing stock of retained risk; $542.1M of it is mandated retention.'},
+    {k:'ni',    name:'GAAP net income',      fmt:v=>money(v.ni),       read:'Front-loaded fees against back-loaded losses; read with the truth clock.'},
+    {k:'opex',  name:'Core opex',            fmt:v=>pc(v.opex,0),      read:'Falling as a share of FRLPC — files under H1.'}
+  ];
+  let h='';
+  cards.forEach(c=>{
+    const l=last(c.k);
+    h+='<div class="opcard"><div class="stamp">'+esc(c.name)+'</div>'+
+       '<div class="v">'+(l?c.fmt(l):'<span class="nd">n/d</span>')+'</div>'+
+       '<div class="meta">'+(l?esc(l.q):'')+'</div>'+spark(qs,c.k)+
+       '<p class="interp" style="font-size:11px;margin-top:5px">'+esc(c.read)+'</p></div>';
+  });
+  const le=last('ebitda');
+  h+='<div class="opcard" style="border-left:4px solid var(--amber)"><div class="stamp" style="color:var(--amber)">Adjusted EBITDA</div>'+
+     '<div class="v">'+(le?money(le.ebitda):'<span class="nd">n/d</span>')+'</div>'+
+     '<div class="meta">'+(le?esc(le.q):'')+' &middot; <span class="chip c-amber">management\'s number</span></div>'+spark(qs,'ebitda')+
+     '<p class="interp" style="font-size:11px;margin-top:5px">Deleted from the headline of this instrument. It appears here for continuity only and settles nothing between H1 and H2.</p></div>';
+  document.getElementById('opCards').innerHTML=h;
+
+  document.getElementById('guideBar').innerHTML=
+   '<h4>3Q FY2026 guidance <span class="chip c-amber">management\'s number</span></h4>'+
+   '<dl><dt>Network volume</dt><dd class="mono">$3.425&ndash;3.625B</dd>'+
+   '<dt>Total revenue</dt><dd class="mono">$370&ndash;390M</dd>'+
+   '<dt>Adjusted EBITDA</dt><dd class="mono">$120&ndash;130M</dd>'+
+   '<dt>GAAP net income</dt><dd class="mono">$42M+</dd>'+
+   '<dt>FY26 FRLPC margin assumed</dt><dd class="mono">4.0&ndash;5.0%</dd></dl>'+
+   '<p class="interp" style="font-size:11px">Guidance is a forecast by the party being judged. It is context, not evidence, and never enters Panel 3.</p>';
+
+  document.getElementById('constBar').innerHTML=
+   '<h4>Standing constants as filed &middot; balance-sheet date 30 June 2026</h4>'+
+   '<dl>'+CONSTANTS.map(c=>'<dt>'+esc(c.k)+'</dt><dd class="mono">'+c.v+'<div class="interp" style="font-size:11px;margin-top:2px">'+esc(c.r)+'</div></dd>').join('')+'</dl>';
+}
+
+/* ---------------------------------------------------------------
+   UPDATE FORM
+   --------------------------------------------------------------- */
+function buildForm(){
+  const g=document.getElementById('qFields');
+  g.innerHTML=FIELDS.map(f=>
+    '<label><span class="lab">'+esc(f.lab)+' <span style="opacity:.75">'+esc(f.unit)+'</span></span>'+
+    '<input id="f_'+f.k+'" '+(f.text?'':'type="number" step="any"')+' style="width:100%"></label>').join('');
+  document.getElementById('qFormNote').textContent='Blank fields stay null and render n/d. Rolling window keeps the most recent eight quarters.';
+  document.getElementById('qForm').onsubmit=async ev=>{
+    ev.preventDefault();
+    const row={};
+    let ok=true;
+    FIELDS.forEach(f=>{
+      const v=document.getElementById('f_'+f.k).value.trim();
+      if(f.text){ row[f.k]=v.toUpperCase(); if(f.k==='q'&&!qk(v)) ok=false; }
+      else row[f.k]=(v===''?null:Number(v));
+    });
+    if(!ok){ document.getElementById('qFormNote').textContent='Quarter must read like 3Q26. Nothing saved.'; return; }
+    const i=STATE.quarters.findIndex(x=>x.q===row.q);
+    if(i>=0){ const c=STATE.quarters[i]; Object.keys(row).forEach(k=>{if(row[k]!=null&&row[k]!=='')c[k]=row[k];}); }
+    else STATE.quarters.push(row);
+    STATE.quarters.sort((a,b)=>qk(a.q)-qk(b.q));
+    if(STATE.quarters.length>8) STATE.quarters=STATE.quarters.slice(-8);
+    const saved=await persist(KEY.q,STATE.quarters);
+    evalFalsifications();
+    renderAll();
+    document.getElementById('qFormNote').textContent=saved
+      ? (row.q+' merged and persisted. Tests, falsification cards, rule lamps and the appendix recomputed.')
+      : (row.q+' merged on screen only — the write did not succeed, so this will not survive a reload.');
+    FIELDS.forEach(f=>{ if(f.k!=='q') document.getElementById('f_'+f.k).value=''; });
+  };
+
+  document.getElementById('resetBtn').onclick=async()=>{
+    const w=document.getElementById('resetWord').value.trim();
+    const note=document.getElementById('resetNote');
+    if(w!=='RESET'){ note.textContent='Type RESET exactly. Nothing erased.'; note.style.color='var(--amber)'; return; }
+    let allOk=true;
+    for(const k of [KEY.q,KEY.ev,KEY.pr,KEY.ts,KEY.fa,KEY.ck,KEY.po,KEY.iq,'pgy-verdict:vintage']){
+      const r=await sdel(k); if(!r) allOk=false;
+    }
+    STATE=seedState();
+    document.getElementById('resetWord').value='';
+    note.textContent=allOk?'Notebook erased. Shipped baseline restored.':'State reset on screen; one or more keys could not be deleted from storage.';
+    note.style.color='var(--muted)';
+    renderAll();
+  };
+}
+
+/* ---------------------------------------------------------------
+   INIT
+   --------------------------------------------------------------- */
+function renderAll(){
+  renderDue(); renderProb(); renderEvidence(); renderTests();
+  renderTiming(); renderVintage(); renderFals();
+  renderPrice(); renderSurv();
+  renderPosition(); renderPremortem(); renderRules();
+  renderShare(); renderInterrogation(); renderAppendix();
+}
+
+document.getElementById('evForm').onsubmit=async ev=>{
+  ev.preventDefault();
+  const text=document.getElementById('evText').value.trim();
+  const q=document.getElementById('evQ').value.trim().toUpperCase();
+  if(!text||!q) return;
+  STATE.evidence.push({id:uid('ev'),date:todayISO(),q:q,file:document.getElementById('evFile').value,
+    w:Number(document.getElementById('evW').value),text:text,struck:null});
+  await persist(KEY.ev,STATE.evidence);
+  document.getElementById('evText').value='';
+  renderEvidence();
+};
+
+(async function init(){
+  buildForm();
+  renderAll();
+  await loadAll();
+  const v=await sget('pgy-verdict:vintage');
+  if(Array.isArray(v)) STATE.vintage=v;
+  evalFalsifications();
+  renderAll();
+})();
+</script>
+</body>
+</html>
