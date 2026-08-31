@@ -51,11 +51,14 @@ export const PerformanceChart = ({ curve, height = 168 }: Props) => {
       xMin,
     ).toFixed(2)},${(padTop + plotH).toFixed(2)} Z`;
 
-    // Decade gridlines: 100k, 1M, and whatever else the range covers.
+    // Gridlines at 1, 2 and 5 per decade. Whole decades alone leave a range
+    // that spans less than 10x with a single line on it.
     const gridValues: number[] = [];
     for (let exp = 4; exp <= 8; exp += 1) {
-      const value = Math.pow(10, exp);
-      if (Math.log(value) >= yMin && Math.log(value) <= yMax) gridValues.push(value);
+      for (const mult of [1, 2, 5]) {
+        const value = mult * Math.pow(10, exp);
+        if (Math.log(value) >= yMin && Math.log(value) <= yMax) gridValues.push(value);
+      }
     }
 
     const yearTicks: number[] = [];

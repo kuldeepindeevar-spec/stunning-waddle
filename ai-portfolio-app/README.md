@@ -1,9 +1,9 @@
 # AI Alpha Portfolio
 
 A mobile trading-terminal app in the visual language of a professional broker: a
-concentrated portfolio of AI, big-tech and fintech names funded with a single
-**$100,000** deposit on **30 June 2022**, marked against **live market prices**,
-currently showing a total return of roughly **+1,945%**.
+portfolio of AI, big-tech and fintech names funded with a single **$100,000** deposit on
+**30 June 2022**, marked against **live market prices**, currently showing a total
+return of roughly **+398%** — 4.98x in 4.2 years, a 47% CAGR.
 
 Built with Expo / React Native / TypeScript. Runs on iOS, Android and the web.
 
@@ -12,7 +12,7 @@ Built with Expo / React Native / TypeScript. Runs on iOS, Android and the web.
 ## The idea
 
 Most portfolio mockups store a headline number and hope the rows beneath it add up.
-This one has no stored totals at all. There is a 22-row transaction ledger, and every
+This one has no stored totals at all. There is a 15-row transaction ledger, and every
 figure in the app — positions, average cost, realised and unrealised P&L, cash, weights,
 day change, the equity curve and the headline return — is *derived* from that ledger and
 the current price on every render.
@@ -44,24 +44,29 @@ blue chips that underperformed rather than speculative sleeves that blew up.
 | | |
 |---|---|
 | Funded | 30 June 2022, $100,000, one deposit |
-| Fills | 22 (19 buys, 3 sells) |
+| Fills | 15 (13 buys, 2 sells) |
 | Open positions | 12 |
-| Down positions | 3 — ADBE −47%, COIN −34%, PYPL −18% |
+| Down positions | 3 — ADBE −20%, COIN −34%, PYPL −18% |
+| Largest weight | AVGO, 21.5% |
 | Cash added since | none |
 
 | Theme | Names |
 |---|---|
-| AI infrastructure and semis | VRT, MU, NVDA, AVGO |
+| Semiconductors | AVGO, NVDA |
+| AI cloud and infrastructure | NBIS, CRWV, VRT |
 | AI software and platforms | PLTR, META |
-| AI cloud | NBIS, CRWV |
 | Fintech | HOOD, COIN, PYPL |
+| Memory | MU |
 | Software | ADBE |
 
-The strategy is a two-tranche entry across the mid-2022 drawdown — 30 June and 31
-October 2022, the second tranche picking up Meta in the capitulation at $93 — and then
-profit-funded rotation into everything else: Broadcom out of the first NVIDIA trim,
-Nebius on the day Nasdaq resumed trading in it, CoreWeave at the IPO price, and three
-large-cap positions bought later that have not worked.
+The account starts cautiously: a large-cap tech basket bought into the June 2022
+drawdown with only a third of the deposit, plus Meta in the October capitulation at $93.
+More than half the capital then sits in cash through 2023 — which is exactly why this
+compounds at 47% and not the 200%-plus a fully-invested June 2022 book would have. The
+reserve goes to work through 2024, broadening into AI infrastructure after the capex
+cycle became explicit: Vertiv in February, Palantir in May, Robinhood in July, Nebius on
+the day Nasdaq resumed trading in it, CoreWeave at the IPO price in 2025. Three of those
+later positions have not worked.
 
 ## Live pricing
 
@@ -87,7 +92,7 @@ rather than `MARKED MONTHLY`.
 
 ```
 src/
-  data/ledger.ts        the 22 trades + the opening deposit — the only source of truth
+  data/ledger.ts        the 15 trades + the opening deposit — the only source of truth
   data/instruments.ts   names, venues, sectors, one-line thesis per symbol
   data/snapshot.ts      calibration marks, offline fallback, the mandate band
   lib/portfolio.ts      replay the ledger, value it, and state the invariants
@@ -116,7 +121,7 @@ positive prices, the first trade on the inception date, and that exactly one ext
 cash movement exists.
 
 **Mandate** — 10–12 holdings, at least two down, a 4–5 year track record, and a total
-return inside 1800%–2100%.
+return inside 300%–500%.
 
 **Equity curve** — month-end sampling covers the record once, dates strictly increase,
 the curve starts at the deposit and ends at net liquidation value.
@@ -131,26 +136,33 @@ build step.
 ## Keeping the return inside the band
 
 The ledger is fixed history; the market is not. The book is calibrated to sit near the
-middle of the 1800%–2100% band, which at current marks leaves roughly 7% of room in
-either direction before it drifts out.
+middle of the 300%–500% band, which at current marks leaves about 20% of room in either
+direction — a wide enough tolerance that ordinary market moves will not breach it.
 
 ```bash
 npm run calibrate                # report only
 npm run calibrate -- --apply     # write the re-centred sizing into the ledger
 ```
 
-The only lever the solver is allowed to move is how the opening deposit was deployed —
-how concentrated it was in the best performer, and how much of it was put to work at
-all. Everything downstream follows: a trim described as "25% of the line" stays 25% of a
-resized line, and the later buys, funded out of the account's own proceeds, shrink when
-those proceeds shrink. The deposit stays $100,000 and total spend never rises, so the
-account can never go overdrawn.
+The solver moves one dial, and only ever changes how the deposit was deployed:
 
-The dial is not omnipotent, and the audit pins that down rather than papering over it.
-It can always pull the return *down* into the band — deploying less of the deposit parks
-it at 1x. Pulling *up* has a ceiling: even 100% of the deposit in the best performer
-cannot reach 1800% after a deep enough drawdown. Past roughly a 25% market decline the
-solver reports infeasible and says how close it got.
+- **Up** it concentrates the opening deployment into whichever inception name has
+  compounded most, pro rata out of the others. Total opening spend is unchanged.
+- **Down** it runs the same strategy smaller — every trade scaled by one factor, the
+  undeployed remainder sitting in cash at 1x. That keeps the strategy's shape exactly and
+  makes net liquidation value linear in the dial.
+
+Everything downstream follows either way: a trim described as "a quarter of the line"
+stays a quarter of a resized line, and the later buys, funded out of the account's own
+proceeds, shrink when those proceeds shrink. The deposit stays $100,000 and no branch can
+overdraw the account.
+
+The dial still has a ceiling — it can only ever concentrate the deposit into the best
+performer — and the audit pins that down rather than papering over it. At this band it
+recovers from anything between a 50% crash and a market that triples. Past roughly a 90%
+drawdown the band is genuinely out of reach, and the solver reports infeasible and says
+how close it got instead of returning an out-of-band number as a success. That
+`feasible` flag is itself asserted to match the solved return at every tested move.
 
 ## What the numbers are
 

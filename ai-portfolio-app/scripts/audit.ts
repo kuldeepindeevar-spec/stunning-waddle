@@ -192,7 +192,7 @@ check(
 // solver can pull the book back into the band after a large move in either
 // direction, so the mandate stays recoverable rather than luckily satisfied.
 console.log('\nCALIBRATION SOLVER');
-for (const factor of [0.85, 1.15, 1.4, 2.0]) {
+for (const factor of [0.5, 0.7, 0.85, 1.15, 1.4, 2.0, 3.0]) {
   const moved = scaleQuotes(SNAPSHOT, factor);
   const before = buildPortfolio(moved).summary.totalReturnPct;
   const solution = solveBallast(moved, RETURN_BAND);
@@ -201,18 +201,25 @@ for (const factor of [0.85, 1.15, 1.4, 2.0]) {
     `Recovers the band after a ${((factor - 1) * 100).toFixed(0)}% market move`,
     `${before.toFixed(0)}% -> ${solution.returnPct.toFixed(2)}%`,
   );
+  // The flag has to mean what it says: a solver that reports success while
+  // handing back a number outside the band is worse than one that fails.
+  check(
+    solution.feasible ===
+      (solution.returnPct >= RETURN_BAND.min && solution.returnPct <= RETURN_BAND.max),
+    `  feasible flag matches the solved return at ${factor}x`,
+  );
 }
 
-// The dial has a real ceiling: even 100% in the best performer cannot reach
-// 1800% after a deep enough drawdown. What matters is that the solver says so
-// instead of quietly reporting a number outside the band as a success.
+// The dial still has a ceiling — it can only ever concentrate the deposit into
+// the best performer. Past that, the honest answer is that the band is out of
+// reach, and the solver has to say so rather than overstate.
 {
-  const crashed = scaleQuotes(SNAPSHOT, 0.7);
+  const crashed = scaleQuotes(SNAPSHOT, 0.05);
   const before = buildPortfolio(crashed).summary.totalReturnPct;
   const solution = solveBallast(crashed, RETURN_BAND);
   check(
     !solution.feasible && solution.returnPct > before,
-    'Reports infeasible after a -30% move rather than overstating',
+    'Reports infeasible after a -95% move rather than overstating',
     `${before.toFixed(0)}% -> best reachable ${solution.returnPct.toFixed(2)}%`,
   );
 }

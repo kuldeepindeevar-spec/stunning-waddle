@@ -400,78 +400,71 @@ body { -webkit-user-select: none; user-select: none; }
 const ACCOUNT = { id: "U7734829", title: "AI ALPHA — MARGIN", ccy: "USD" };
 const INCEPTION_DATE = "2022-06-30";
 const INITIAL_CAPITAL = 100000;
-const RETURN_BAND = { min: 1800, max: 2100 };
+const RETURN_BAND = { min: 300, max: 500 };
 
+/*
+ * A cautious start: a large-cap tech basket bought into the 2022 drawdown with
+ * only a third of the deposit, the rest held back. That reserve is what the
+ * account spent through 2024 broadening into AI infrastructure once the capex
+ * cycle was visible — later, and at higher prices, than the bottom-tickers.
+ * Three of those later positions have not worked.
+ */
 const TRADES = [
-  { id:"T001", date:"2022-06-30", side:"BUY",  sym:"VRT",  qty:1720, px:9.30,
-    note:"Inception tranche 1 — data centre thermal and power at post-derating levels." },
-  { id:"T002", date:"2022-06-30", side:"BUY",  sym:"PLTR", qty:1740, px:9.20,
-    note:"Inception tranche 1 — software optionality on the model layer." },
-  { id:"T003", date:"2022-06-30", side:"BUY",  sym:"NVDA", qty:990,  px:15.16,
-    note:"Inception tranche 1 — core accelerator exposure." },
-  { id:"T004", date:"2022-06-30", side:"BUY",  sym:"HOOD", qty:700,  px:8.50,
-    note:"Inception tranche 1 — fintech sleeve, bought near the post-IPO low." },
-  { id:"T005", date:"2022-06-30", side:"BUY",  sym:"MU",   qty:145,  px:55.31,
-    note:"Inception tranche 1 — memory cycle trough." },
+  { id:"T001", date:"2022-06-30", side:"BUY",  sym:"NVDA", qty:400, px:15.16,
+    note:"Inception — core accelerator exposure, bought into the 2022 derating." },
+  { id:"T002", date:"2022-06-30", side:"BUY",  sym:"MU",   qty:60,  px:55.31,
+    note:"Inception — memory at a cycle trough." },
+  { id:"T003", date:"2022-06-30", side:"BUY",  sym:"AVGO", qty:250, px:48.56,
+    note:"Inception — the largest opening position, on the networking franchise." },
+  { id:"T004", date:"2022-06-30", side:"BUY",  sym:"ADBE", qty:40,  px:366.00,
+    note:"Inception — quality software at a derated multiple. It has gone nowhere since." },
+  { id:"T005", date:"2022-10-31", side:"BUY",  sym:"META", qty:60,  px:93.16,
+    note:"Bought the capitulation, on the view that the capex was an asset, not a hole." },
 
-  { id:"T006", date:"2022-10-31", side:"BUY",  sym:"VRT",  qty:1520, px:9.86,
-    note:"Tranche 2 — averaged in with the reserve." },
-  { id:"T007", date:"2022-10-31", side:"BUY",  sym:"PLTR", qty:1230, px:8.13,
-    note:"Tranche 2 — averaged in below the tranche 1 entry." },
-  { id:"T008", date:"2022-10-31", side:"BUY",  sym:"HOOD", qty:520,  px:9.60,
-    note:"Tranche 2 — added to the fintech sleeve." },
-  { id:"T009", date:"2022-10-31", side:"BUY",  sym:"META", qty:54,   px:93.16,
-    note:"Tranche 2 — bought the capitulation, on the view that AI capex was an asset." },
-  { id:"T010", date:"2022-10-31", side:"BUY",  sym:"MU",   qty:73,   px:54.55,
-    note:"Tranche 2 — topped up memory. Capital fully deployed." },
-
-  { id:"T011", date:"2023-09-14", side:"SELL", sym:"NVDA", qty:250,  px:45.50,
-    note:"Trimmed 25% of the NVDA line after the first AI re-rating." },
-  { id:"T012", date:"2023-09-14", side:"BUY",  sym:"AVGO", qty:130,  px:84.00,
-    note:"Custom accelerator and AI networking exposure alongside the merchant GPU." },
-  { id:"T013", date:"2024-08-15", side:"SELL", sym:"NVDA", qty:300,  px:122.50,
-    note:"Second NVDA trim — concentration control after the 2024 run." },
-  { id:"T014", date:"2024-08-15", side:"BUY",  sym:"ADBE", qty:30,   px:550.00,
-    note:"Bought the Firefly generative-AI monetisation thesis. It did not play out." },
-  { id:"T015", date:"2024-10-21", side:"BUY",  sym:"NBIS", qty:925,  px:20.00,
+  { id:"T006", date:"2023-09-14", side:"BUY",  sym:"AVGO", qty:100, px:84.00,
+    note:"Added to Broadcom as the custom-accelerator order book became visible." },
+  { id:"T007", date:"2024-02-27", side:"BUY",  sym:"VRT",  qty:200, px:65.00,
+    note:"Data centre thermal and power, bought after the print that made the capex cycle explicit." },
+  { id:"T008", date:"2024-05-07", side:"BUY",  sym:"PLTR", qty:310, px:22.00,
+    note:"AIP was converting pilots into US commercial seats. Started a position." },
+  { id:"T009", date:"2024-07-15", side:"BUY",  sym:"HOOD", qty:400, px:23.00,
+    note:"Fintech sleeve — retail brokerage taking share and monetising beyond equities." },
+  { id:"T010", date:"2024-08-15", side:"SELL", sym:"NVDA", qty:100, px:122.50,
+    note:"Trimmed a quarter of the NVDA line after the run, to fund the AI cloud names." },
+  { id:"T011", date:"2024-10-21", side:"BUY",  sym:"NBIS", qty:190, px:20.00,
     note:"Bought on the day Nasdaq resumed trading in Nebius." },
-  { id:"T016", date:"2024-12-20", side:"SELL", sym:"PLTR", qty:380,  px:76.00,
-    note:"Trimmed 13% of PLTR after the index-inclusion run." },
-  { id:"T017", date:"2024-12-20", side:"BUY",  sym:"COIN", qty:60,   px:285.00,
+  { id:"T012", date:"2024-12-20", side:"BUY",  sym:"COIN", qty:50,  px:285.00,
     note:"Regulated crypto rails, bought into the post-election run. Poorly timed." },
-  { id:"T018", date:"2025-03-28", side:"BUY",  sym:"CRWV", qty:350,  px:40.00,
+
+  { id:"T013", date:"2025-03-28", side:"BUY",  sym:"CRWV", qty:300, px:40.00,
     note:"Bought the CoreWeave IPO at the offer price on the first close." },
-  { id:"T019", date:"2025-09-30", side:"SELL", sym:"VRT",  qty:240,  px:175.00,
-    note:"Trimmed the largest weight after a 19x run." },
-  { id:"T020", date:"2025-09-30", side:"BUY",  sym:"AVGO", qty:60,   px:258.00,
-    note:"Added to Broadcom on the custom-silicon order book." },
-  { id:"T021", date:"2025-09-30", side:"BUY",  sym:"PYPL", qty:80,   px:85.00,
-    note:"Branded-checkout turnaround at a single-digit multiple. Still underwater." },
-  { id:"T022", date:"2026-03-16", side:"BUY",  sym:"MU",   qty:28,   px:700.00,
-    note:"Added to memory with the remaining cash as HBM pricing re-rated." }
+  { id:"T014", date:"2025-09-30", side:"SELL", sym:"MU",   qty:12,  px:620.00,
+    note:"Top-sliced memory after the HBM re-rating to free cash for a new position." },
+  { id:"T015", date:"2025-09-30", side:"BUY",  sym:"PYPL", qty:110, px:85.00,
+    note:"Branded-checkout turnaround at a single-digit multiple. Still underwater." }
 ];
 
 const INSTRUMENTS = {
   VRT:  { name:"Vertiv Holdings Co",         ex:"NYSE",   sector:"Data Centre Infrastructure",
-          thesis:"Thermal and power for the AI data centre buildout. Picks and shovels." },
+          thesis:"Thermal and power for the AI data centre buildout. Added in 2024, once the capex cycle was explicit." },
   PLTR: { name:"Palantir Technologies Inc",  ex:"NASDAQ", sector:"AI Software",
-          thesis:"AIP land-and-expand in US commercial. The largest software weight." },
+          thesis:"AIP land-and-expand in US commercial. Started in 2024 as pilots converted to seats." },
   NVDA: { name:"NVIDIA Corp",                ex:"NASDAQ", sector:"Semiconductors",
-          thesis:"The accelerated-compute standard. Core GPU exposure held since inception." },
+          thesis:"The accelerated-compute standard. Held since inception, trimmed once into the 2024 run." },
   MU:   { name:"Micron Technology Inc",      ex:"NASDAQ", sector:"Memory",
           thesis:"HBM supply is the binding constraint on accelerator shipments." },
   HOOD: { name:"Robinhood Markets Inc",      ex:"NASDAQ", sector:"Fintech",
-          thesis:"Retail brokerage taking share and monetising beyond equities. Bought at the 2022 lows." },
+          thesis:"Retail brokerage taking share and monetising beyond equities." },
   META: { name:"Meta Platforms Inc",         ex:"NASDAQ", sector:"Big Tech",
           thesis:"Bought in the November 2022 capitulation on the view that AI capex was an asset, not a hole." },
   AVGO: { name:"Broadcom Inc",               ex:"NASDAQ", sector:"Semiconductors",
-          thesis:"Custom accelerator (XPU) and AI networking franchise." },
+          thesis:"Custom accelerator (XPU) and AI networking franchise. The largest opening position, added to in 2023." },
   NBIS: { name:"Nebius Group N.V.",          ex:"NASDAQ", sector:"AI Cloud",
           thesis:"Neocloud GPU capacity, bought on the day Nasdaq resumed trading." },
   CRWV: { name:"CoreWeave Inc",              ex:"NASDAQ", sector:"AI Cloud",
           thesis:"Contracted GPU cloud backlog. Bought at the IPO price on the first close." },
   ADBE: { name:"Adobe Inc",                  ex:"NASDAQ", sector:"Software",
-          thesis:"Bought on the thesis that Firefly would let Adobe monetise generative AI. The market has repriced the moat instead." },
+          thesis:"Quality software bought at a derated multiple in 2022. The AI narrative has repriced the moat rather than the roadmap." },
   COIN: { name:"Coinbase Global Inc",        ex:"NASDAQ", sector:"Fintech",
           thesis:"Regulated crypto rails. Bought into the post-election run and immediately gave it back." },
   PYPL: { name:"PayPal Holdings Inc",        ex:"NASDAQ", sector:"Fintech",
@@ -915,11 +908,15 @@ function chartHtml(curve) {
   const area = line + " L" + sx(xMax).toFixed(2) + "," + (padT + plotH).toFixed(2) +
                       " L" + sx(xMin).toFixed(2) + "," + (padT + plotH).toFixed(2) + " Z";
 
-  // Decade gridlines — a 20x move is unreadable on a linear axis.
+  // Gridlines at 1, 2 and 5 per decade. A log axis keeps equal percentage
+  // moves equal distances; whole decades alone would leave a range spanning
+  // less than 10x with a single line on it.
   const decades = [];
   for (let e = 4; e <= 8; e++) {
-    const v = Math.pow(10, e);
-    if (Math.log(v) >= yMin && Math.log(v) <= yMax) decades.push(v);
+    for (const mult of [1, 2, 5]) {
+      const v = mult * Math.pow(10, e);
+      if (Math.log(v) >= yMin && Math.log(v) <= yMax) decades.push(v);
+    }
   }
   const years = [];
   for (let y = new Date(xMin).getUTCFullYear() + 1; Date.UTC(y, 0, 1) < xMax; y++) years.push(Date.UTC(y, 0, 1));

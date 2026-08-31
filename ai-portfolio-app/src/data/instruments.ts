@@ -20,7 +20,7 @@ export const INSTRUMENTS: Record<string, Instrument> = {
     exchange: 'NASDAQ',
     currency: 'USD',
     sector: 'Semiconductors',
-    thesis: 'The accelerated-compute standard. Core GPU exposure held since inception.',
+    thesis: 'The accelerated-compute standard. Held since inception, trimmed once into the 2024 run.',
   },
   VRT: {
     symbol: 'VRT',
@@ -28,7 +28,7 @@ export const INSTRUMENTS: Record<string, Instrument> = {
     exchange: 'NYSE',
     currency: 'USD',
     sector: 'Data Centre Infrastructure',
-    thesis: 'Thermal and power for the AI data centre buildout. Picks and shovels.',
+    thesis: 'Thermal and power for the AI data centre buildout. Added in 2024, once the capex cycle was explicit.',
   },
   PLTR: {
     symbol: 'PLTR',
@@ -36,7 +36,7 @@ export const INSTRUMENTS: Record<string, Instrument> = {
     exchange: 'NASDAQ',
     currency: 'USD',
     sector: 'AI Software',
-    thesis: 'AIP land-and-expand in US commercial. The largest software weight.',
+    thesis: 'AIP land-and-expand in US commercial. Started in 2024 as pilots converted to seats.',
   },
   MU: {
     symbol: 'MU',
@@ -52,7 +52,7 @@ export const INSTRUMENTS: Record<string, Instrument> = {
     exchange: 'NASDAQ',
     currency: 'USD',
     sector: 'Fintech',
-    thesis: 'Retail brokerage taking share and monetising beyond equities. Bought at the 2022 lows.',
+    thesis: 'Retail brokerage taking share and monetising beyond equities.',
   },
   META: {
     symbol: 'META',
@@ -68,7 +68,7 @@ export const INSTRUMENTS: Record<string, Instrument> = {
     exchange: 'NASDAQ',
     currency: 'USD',
     sector: 'Semiconductors',
-    thesis: 'Custom accelerator (XPU) and AI networking franchise.',
+    thesis: 'Custom accelerator (XPU) and AI networking franchise. The largest opening position, added to in 2023.',
   },
   NBIS: {
     symbol: 'NBIS',
@@ -92,7 +92,7 @@ export const INSTRUMENTS: Record<string, Instrument> = {
     exchange: 'NASDAQ',
     currency: 'USD',
     sector: 'Software',
-    thesis: 'Bought on the thesis that Firefly would let Adobe monetise generative AI. It has not, and the market has repriced the moat.',
+    thesis: 'Quality software bought at a derated multiple in 2022. The AI narrative has repriced the moat rather than the roadmap.',
   },
   COIN: {
     symbol: 'COIN',

@@ -33,4 +33,4 @@ export const SNAPSHOT: Record<string, SnapshotQuote> = {
 };
 
 /** Mandate band the portfolio is calibrated to sit inside. */
-export const RETURN_BAND = { min: 1800, max: 2100 } as const;
+export const RETURN_BAND = { min: 300, max: 500 } as const;

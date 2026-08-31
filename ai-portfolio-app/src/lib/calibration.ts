@@ -8,13 +8,16 @@
  *
  *   lambda > 0  shift dollars from the other inception buys into the anchor
  *   lambda = 0  the ledger exactly as written
- *   lambda < 0  deploy less of the deposit and leave the rest in cash
+ *   lambda < 0  run the same strategy smaller, leaving the rest in cash
  *
  * The two halves are deliberately different. Above zero the account is already
  * fully invested, so the only way up is concentration. Below zero, spreading
  * the anchor's dollars across the other names barely helps because they are
- * all large winners too — the lever with real downward range is simply putting
- * less of the deposit to work, which parks it at 1x.
+ * all winners too — the lever with real downward range is simply putting less
+ * of the deposit to work, which parks the remainder at 1x. Scaling every trade
+ * by the same factor keeps the strategy's shape exactly and makes net
+ * liquidation value linear in the dial, from the deposit at -1 to the ledger
+ * as written at 0.
  *
  * The rest of the ledger follows that dial rather than ignoring it: a trim of
  * "16% of the line" stays 16% of a resized line, and the later buys, which are
@@ -96,29 +99,23 @@ function inceptionSizing(lambda: number, anchor: string): Record<string, number>
     0,
   );
 
+  // Concentrate into the anchor. Both sides move pro rata by their share of
+  // their own pot — the anchor may be bought across several tranches and the
+  // other names across several more, so the moved dollars have to be split
+  // within each side rather than applied to every row in full. Total inception
+  // spend is therefore unchanged.
+  const moved = lambda * otherDollars;
+
   for (const trade of INCEPTION_TRADES) {
     const base = trade.quantity * trade.price;
-    let dollars: number;
-
-    if (lambda < 0) {
-      // Deploy less of the deposit; the remainder sits in cash at 1x.
-      dollars = base * (1 + lambda);
-    } else {
-      // Concentrate into the anchor. Both sides move pro rata by their share
-      // of their own pot — the anchor is bought across two tranches and the
-      // other names across eight, so the moved dollars have to be split within
-      // each side rather than applied to every row in full. Total inception
-      // spend is therefore unchanged.
-      const moved = lambda * otherDollars;
-      dollars =
-        trade.symbol === anchor
-          ? anchorDollars > 0
-            ? base + moved * (base / anchorDollars)
-            : base
-          : otherDollars > 0
-            ? base - moved * (base / otherDollars)
-            : base;
-    }
+    const dollars =
+      trade.symbol === anchor
+        ? anchorDollars > 0
+          ? base + moved * (base / anchorDollars)
+          : base
+        : otherDollars > 0
+          ? base - moved * (base / otherDollars)
+          : base;
     overrides[trade.id] = Math.max(0, Math.floor(dollars / trade.price));
   }
   return overrides;
@@ -132,6 +129,18 @@ function inceptionSizing(lambda: number, anchor: string): Record<string, number>
  * account can only ever deploy proceeds it actually has.
  */
 export function sizingForLambda(lambda: number, anchor: string): Record<string, number> {
+  if (lambda < 0) {
+    // The same strategy, run smaller. Every flow scales together, so the
+    // account cannot go overdrawn and the undeployed remainder simply sits in
+    // cash — which is what gives the dial its downward range.
+    const factor = 1 + lambda;
+    const scaled: Record<string, number> = {};
+    for (const trade of TRADES) {
+      scaled[trade.id] = Math.max(0, Math.floor(trade.quantity * factor));
+    }
+    return scaled;
+  }
+
   const overrides = inceptionSizing(lambda, anchor);
 
   // How each symbol's opening line was resized.
