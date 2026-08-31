@@ -1479,7 +1479,9 @@ function renderStrip() {
 
 function render() {
   const tab = TABS.find(t => t.key === state.tab);
-  document.getElementById("screenTitle").textContent = state.detail ? "Position" : tab.title;
+  // A stock detail screen is headed by the ticker, so the title still tells
+  // you what you are looking at once the card scrolls away.
+  document.getElementById("screenTitle").textContent = state.detail || tab.title;
 
   let html;
   try {

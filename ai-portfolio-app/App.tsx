@@ -45,7 +45,8 @@ const Shell = () => {
     <View style={[styles.root, { paddingTop: insets.top }]}>
       <StatusBar style="light" />
       <TopBar
-        title={selected ? 'Position' : TITLES[tab]}
+        // A stock detail screen is headed by its ticker, not a generic label.
+        title={selected ?? TITLES[tab]}
         searchOpen={searchOpen}
         onToggleSearch={toggleSearch}
       />
