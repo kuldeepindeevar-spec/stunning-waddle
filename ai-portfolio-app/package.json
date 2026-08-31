@@ -13,7 +13,8 @@
     "calibrate": "tsx scripts/calibrate.ts",
     "test": "tsx scripts/audit.ts",
     "build:web": "expo export --platform web --output-dir dist",
-    "shots": "node scripts/shots.mjs shots"
+    "shots": "node scripts/shots.mjs shots",
+    "verify:html": "tsx scripts/verify-html.mts ../ai-portfolio.html"
   },
   "dependencies": {
     "@expo/metro-runtime": "~4.0.1",

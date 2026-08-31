@@ -60,3 +60,40 @@ asserts the accounting identities and the mandate constraints from the command l
 
 See [`ai-portfolio-app/README.md`](ai-portfolio-app/README.md) and the reconciliation in
 [`ai-portfolio-app/docs/AUDIT.md`](ai-portfolio-app/docs/AUDIT.md).
+
+## `ai-portfolio.html` — the same app as one file, for iPhone
+
+A single self-contained document (69 KB, inline CSS and vanilla JS, no build step, no
+external assets) carrying the same ledger, the same engine and the same four screens.
+Built to be added to the iPhone home screen: full-screen standalone mode, safe-area
+insets, a built-in pull-to-refresh, 44pt tap targets, and a home-screen icon generated
+at runtime.
+
+### Getting it onto the phone
+
+The app needs an `https://` origin — for Add to Home Screen to run it full-screen, and
+for Safari to allow the quote requests. The simplest host is GitHub Pages on this repo:
+**Settings → Pages → Source: Deploy from a branch**, pick this branch and `/ (root)`.
+The app is then at `https://<user>.github.io/stunning-waddle/ai-portfolio.html`. Open it
+in Safari, tap Share, then **Add to Home Screen**.
+
+Opening the file straight from the Files app also works, but Safari treats `file://` as
+an opaque origin and blocks the quote requests, so it will run on the bundled snapshot
+marks and say so in the status strip.
+
+### Live prices
+
+Safari enforces CORS and the Yahoo endpoint sends no CORS header, so quotes go through a
+relay. Three public fallbacks are tried in order and the working one is remembered.
+Point **Audit → Data source** at your own relay to keep the requests under your control;
+it accepts a `{url}` placeholder. Anything the relays cannot answer for keeps its
+snapshot mark and is counted in the status strip — a stale price is never shown as a
+live one.
+
+### Verifying it
+
+The HTML build carries its own copy of the ledger and engine, so the two could drift.
+`npm run verify:html` (from `ai-portfolio-app/`) loads the real file in a browser at
+iPhone size and asserts it reports exactly the native figures — every position, every
+summary line, all ten identities — plus the equity curve, the iOS shell, tap-target
+sizes, text rendering and landscape rotation.
