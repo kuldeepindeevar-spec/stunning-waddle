@@ -18,18 +18,18 @@ export type SnapshotQuote = {
 export const SNAPSHOT_AS_OF = '2026-08-31T20:00:00Z';
 
 export const SNAPSHOT: Record<string, SnapshotQuote> = {
-  NVDA: { price: 218.75, previousClose: 220.10 },
-  PLTR: { price: 186.29, previousClose: 185.94 },
   VRT: { price: 257.08, previousClose: 269.28 },
+  PLTR: { price: 186.29, previousClose: 185.94 },
+  NVDA: { price: 218.75, previousClose: 220.10 },
   MU: { price: 932.86, previousClose: 935.38 },
-  APP: { price: 317.76, previousClose: 312.63 },
+  HOOD: { price: 104.26, previousClose: 110.20 },
+  META: { price: 578.02, previousClose: 571.11 },
   AVGO: { price: 306.42, previousClose: 302.39 },
-  ARM: { price: 239.05, previousClose: 241.20 },
   NBIS: { price: 209.18, previousClose: 218.49 },
   CRWV: { price: 84.23, previousClose: 86.80 },
-  SMCI: { price: 37.08, previousClose: 38.46 },
-  SOUN: { price: 7.24, previousClose: 6.92 },
-  AI: { price: 10.53, previousClose: 10.33 },
+  ADBE: { price: 291.52, previousClose: 289.15 },
+  COIN: { price: 187.16, previousClose: 183.90 },
+  PYPL: { price: 70.01, previousClose: 69.20 },
 };
 
 /** Mandate band the portfolio is calibrated to sit inside. */

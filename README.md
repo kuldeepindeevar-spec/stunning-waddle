@@ -50,11 +50,12 @@ just do not survive a reload. Reset is guarded by a typed `RESET` confirmation.
 # AI Alpha Portfolio (`ai-portfolio-app/`)
 
 An unrelated second project in this repository: a mobile trading-terminal app showing a
-concentrated AI portfolio funded with a single $100,000 deposit in June 2022, marked
-against live market prices, currently at roughly +1,950% total return.
+concentrated portfolio of AI, big-tech and fintech names funded with a single $100,000
+deposit in June 2022, marked against live market prices, currently at roughly +1,945%
+total return.
 
 Expo / React Native / TypeScript, iOS + Android + web. Every figure is derived from a
-21-row transaction ledger on each render — no stored totals — and `npm run audit`
+22-row transaction ledger on each render — no stored totals — and `npm run audit`
 asserts the accounting identities and the mandate constraints from the command line.
 
 See [`ai-portfolio-app/README.md`](ai-portfolio-app/README.md) and the reconciliation in

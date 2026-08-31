@@ -1,9 +1,9 @@
 # AI Alpha Portfolio
 
 A mobile trading-terminal app in the visual language of a professional broker: a
-concentrated AI-value-chain portfolio funded with a single **$100,000** deposit on
-**30 June 2022**, marked against **live market prices**, currently showing a total
-return of roughly **+1,950%**.
+concentrated portfolio of AI, big-tech and fintech names funded with a single
+**$100,000** deposit on **30 June 2022**, marked against **live market prices**,
+currently showing a total return of roughly **+1,945%**.
 
 Built with Expo / React Native / TypeScript. Runs on iOS, Android and the web.
 
@@ -12,7 +12,7 @@ Built with Expo / React Native / TypeScript. Runs on iOS, Android and the web.
 ## The idea
 
 Most portfolio mockups store a headline number and hope the rows beneath it add up.
-This one has no stored totals at all. There is a 21-row transaction ledger, and every
+This one has no stored totals at all. There is a 22-row transaction ledger, and every
 figure in the app — positions, average cost, realised and unrealised P&L, cash, weights,
 day change, the equity curve and the headline return — is *derived* from that ledger and
 the current price on every render.
@@ -37,24 +37,31 @@ npm run typecheck
 
 ## The portfolio
 
-Twelve open positions, three of them underwater. Sized and dated to be a plausible
-aggressive AI book rather than a list of winners: the two speculative sleeves bought on
-momentum in late 2024 both went wrong, and the enterprise-AI starter never worked.
+Twelve open positions across AI infrastructure, big tech, AI cloud and fintech — all
+liquid, well-covered US large and mid caps. Three are underwater, and they are ordinary
+blue chips that underperformed rather than speculative sleeves that blew up.
 
 | | |
 |---|---|
 | Funded | 30 June 2022, $100,000, one deposit |
-| Fills | 21 (17 buys, 4 sells) |
+| Fills | 22 (19 buys, 3 sells) |
 | Open positions | 12 |
-| Down positions | 3 — SMCI, SOUN, AI |
+| Down positions | 3 — ADBE −47%, COIN −34%, PYPL −18% |
 | Cash added since | none |
 
-The strategy is a two-tranche entry across the mid-2022 drawdown (30 June and 31
-October 2022), then profit-funded rotation into names that were not listed or not
-investable at inception — Arm at its IPO close, Nebius on the day Nasdaq resumed
-trading, CoreWeave at the IPO price — plus two speculative sleeves that did not work.
+| Theme | Names |
+|---|---|
+| AI infrastructure and semis | VRT, MU, NVDA, AVGO |
+| AI software and platforms | PLTR, META |
+| AI cloud | NBIS, CRWV |
+| Fintech | HOOD, COIN, PYPL |
+| Software | ADBE |
 
-Positions: **VRT, PLTR, NVDA, MU, NBIS, APP, AVGO, ARM, CRWV, SMCI, SOUN, AI**.
+The strategy is a two-tranche entry across the mid-2022 drawdown — 30 June and 31
+October 2022, the second tranche picking up Meta in the capitulation at $93 — and then
+profit-funded rotation into everything else: Broadcom out of the first NVIDIA trim,
+Nebius on the day Nasdaq resumed trading in it, CoreWeave at the IPO price, and three
+large-cap positions bought later that have not worked.
 
 ## Live pricing
 
@@ -80,7 +87,7 @@ rather than `MARKED MONTHLY`.
 
 ```
 src/
-  data/ledger.ts        the 21 trades + the opening deposit — the only source of truth
+  data/ledger.ts        the 22 trades + the opening deposit — the only source of truth
   data/instruments.ts   names, venues, sectors, one-line thesis per symbol
   data/snapshot.ts      calibration marks, offline fallback, the mandate band
   lib/portfolio.ts      replay the ledger, value it, and state the invariants
@@ -134,7 +141,7 @@ npm run calibrate -- --apply     # write the re-centred sizing into the ledger
 
 The only lever the solver is allowed to move is how the opening deposit was deployed —
 how concentrated it was in the best performer, and how much of it was put to work at
-all. Everything downstream follows: a trim described as "16% of the line" stays 16% of a
+all. Everything downstream follows: a trim described as "25% of the line" stays 25% of a
 resized line, and the later buys, funded out of the account's own proceeds, shrink when
 those proceeds shrink. The deposit stays $100,000 and total spend never rises, so the
 account can never go overdrawn.
@@ -151,9 +158,9 @@ Live prices are real, fetched from the market on every refresh.
 
 The ledger is authored data — the account's own transaction record, shipped with the
 app. It is not the export of a real brokerage account, and the app is not affiliated
-with any broker. Trade dates are anchored to real events (the Arm and CoreWeave IPO
-closes, the Nebius relisting) and entry prices are set at realistic levels for their
-dates, but they are the app's record rather than a third-party confirmation.
+with any broker. Trade dates are anchored to real events (the CoreWeave IPO close, the
+Nebius relisting) and entry prices are set at realistic levels for their dates, but they
+are the app's record rather than a third-party confirmation.
 
 "Audit" here means internal consistency, and it is a strong claim: every figure the app
 displays is reproducible from the ledger and the current price, the identities are
