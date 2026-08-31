@@ -72,6 +72,8 @@ export type PortfolioSummary = {
   dayPnlPct: number;
   yearsHeld: number;
   cagrPct: number;
+  /** Net liquidation value as a multiple of the opening deposit. */
+  growth: number;
   winners: number;
   losers: number;
 };
@@ -219,6 +221,7 @@ export function buildPortfolio(
       dayPnlPct: previousNetLiquidation > 0 ? (dayPnl / previousNetLiquidation) * 100 : 0,
       yearsHeld,
       cagrPct: yearsHeld > 0 ? (Math.pow(growth, 1 / yearsHeld) - 1) * 100 : 0,
+      growth,
       winners: priced.filter((p) => p.unrealizedPnl > 0).length,
       losers: priced.filter((p) => p.unrealizedPnl < 0).length,
     },

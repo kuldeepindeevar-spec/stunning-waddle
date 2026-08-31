@@ -110,12 +110,15 @@ export function buildCurveFromHistory(history: PriceHistory, now = Date.now()): 
   return { points, basis: 'marked' };
 }
 
+export type Anchor = { t: number; price: number };
+export type AnchorMap = Record<string, Anchor[]>;
+
 /**
- * Modelled curve. Each symbol's price path is interpolated in log space
- * between the prices the ledger transacted at and today's mark.
+ * Every price the ledger transacted at for each symbol, plus today's mark.
+ * These are the only real points on a symbol's path that the app knows.
  */
-export function buildModelledCurve(quotes: QuoteMap, now = Date.now()): EquityCurve {
-  const anchors: Record<string, { t: number; price: number }[]> = {};
+export function priceAnchors(quotes: QuoteMap, now = Date.now()): AnchorMap {
+  const anchors: AnchorMap = {};
   for (const trade of TRADES) {
     const t = new Date(`${trade.date}T00:00:00Z`).getTime();
     (anchors[trade.symbol] ??= []).push({ t, price: trade.price });
@@ -125,23 +128,37 @@ export function buildModelledCurve(quotes: QuoteMap, now = Date.now()): EquityCu
     if (quote) list.push({ t: now, price: quote.price });
     list.sort((a, b) => a.t - b.t);
   }
+  return anchors;
+}
 
-  const priceAt = (symbol: string, t: number): number | null => {
-    const list = anchors[symbol];
-    if (!list || list.length === 0) return null;
-    if (t <= list[0].t) return list[0].price;
-    if (t >= list[list.length - 1].t) return list[list.length - 1].price;
-    for (let i = 1; i < list.length; i += 1) {
-      const a = list[i - 1];
-      const b = list[i];
-      if (t <= b.t) {
-        const span = b.t - a.t;
-        const w = span === 0 ? 1 : (t - a.t) / span;
-        return Math.exp(Math.log(a.price) * (1 - w) + Math.log(b.price) * w);
-      }
+/** Log-linear interpolation between a symbol's anchors. */
+export function interpolatedPriceAt(
+  anchors: AnchorMap,
+  symbol: string,
+  t: number,
+): number | null {
+  const list = anchors[symbol];
+  if (!list || list.length === 0) return null;
+  if (t <= list[0].t) return list[0].price;
+  if (t >= list[list.length - 1].t) return list[list.length - 1].price;
+  for (let i = 1; i < list.length; i += 1) {
+    const a = list[i - 1];
+    const b = list[i];
+    if (t <= b.t) {
+      const span = b.t - a.t;
+      const w = span === 0 ? 1 : (t - a.t) / span;
+      return Math.exp(Math.log(a.price) * (1 - w) + Math.log(b.price) * w);
     }
-    return list[list.length - 1].price;
-  };
+  }
+  return list[list.length - 1].price;
+}
+
+/**
+ * Modelled curve. Each symbol's price path is interpolated in log space
+ * between the prices the ledger transacted at and today's mark.
+ */
+export function buildModelledCurve(quotes: QuoteMap, now = Date.now()): EquityCurve {
+  const anchors = priceAnchors(quotes, now);
 
   const points: CurvePoint[] = [];
   for (const t of monthEnds(now)) {
@@ -149,7 +166,7 @@ export function buildModelledCurve(quotes: QuoteMap, now = Date.now()): EquityCu
     let value = cash;
     for (const [symbol, qty] of Object.entries(shares)) {
       if (qty <= 0) continue;
-      const price = priceAt(symbol, t);
+      const price = interpolatedPriceAt(anchors, symbol, t);
       if (price != null) value += qty * price;
     }
     points.push({ t, value });

@@ -1,15 +1,15 @@
 /**
- * App shell: safe areas, the account bar, tab switching and the position
- * detail overlay. All market state lives in useMarketData so every tab reads
- * the same marks at the same instant.
+ * App shell: safe areas, the title bar, the search filter, tab switching and
+ * the position detail overlay. All market state lives in useMarketData so
+ * every tab reads the same marks at the same instant.
  */
 
 import React, { useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { colors } from './src/theme';
+import { colors, radius, spacing } from './src/theme';
 import { StatusStrip, TopBar } from './src/components/TopBar';
 import { TabBar, TabKey } from './src/components/TabBar';
 import { PortfolioScreen } from './src/screens/PortfolioScreen';
@@ -18,13 +18,12 @@ import { ActivityScreen } from './src/screens/ActivityScreen';
 import { AuditScreen } from './src/screens/AuditScreen';
 import { WatchlistScreen } from './src/screens/WatchlistScreen';
 import { useMarketData } from './src/hooks/useMarketData';
-import { ACCOUNT } from './src/data/ledger';
 
-const TAB_SUBTITLE: Record<TabKey, string> = {
-  portfolio: ACCOUNT.title,
-  watchlist: 'WATCHLIST · AI VALUE CHAIN',
-  activity: 'ACTIVITY · FULL STATEMENT',
-  audit: 'AUDIT · RECONCILIATION',
+const TITLES: Record<TabKey, string> = {
+  portfolio: 'Portfolio',
+  watchlist: 'Watchlist',
+  activity: 'Activity',
+  audit: 'Audit',
 };
 
 const Shell = () => {
@@ -32,11 +31,40 @@ const Shell = () => {
   const data = useMarketData();
   const [tab, setTab] = useState<TabKey>('portfolio');
   const [selected, setSelected] = useState<string | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [query, setQuery] = useState('');
+
+  const toggleSearch = () => {
+    setSearchOpen((open) => {
+      if (open) setQuery('');
+      return !open;
+    });
+  };
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
       <StatusBar style="light" />
-      <TopBar subtitle={selected ? 'POSITION DETAIL' : TAB_SUBTITLE[tab]} />
+      <TopBar
+        title={selected ? 'Position' : TITLES[tab]}
+        searchOpen={searchOpen}
+        onToggleSearch={toggleSearch}
+      />
+
+      {searchOpen ? (
+        <View style={styles.searchWrap}>
+          <TextInput
+            style={styles.search}
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Filter by symbol or name"
+            placeholderTextColor={colors.textTertiary}
+            autoCapitalize="characters"
+            autoCorrect={false}
+            returnKeyType="search"
+          />
+        </View>
+      ) : null}
+
       <StatusStrip
         live={data.feed.live}
         staleCount={data.feed.staleSymbols.size}
@@ -53,9 +81,9 @@ const Shell = () => {
             onBack={() => setSelected(null)}
           />
         ) : tab === 'portfolio' ? (
-          <PortfolioScreen data={data} onSelect={setSelected} />
+          <PortfolioScreen data={data} query={query} onSelect={setSelected} />
         ) : tab === 'watchlist' ? (
-          <WatchlistScreen data={data} />
+          <WatchlistScreen data={data} query={query} onSelect={setSelected} />
         ) : tab === 'activity' ? (
           <ActivityScreen realizedPnl={data.portfolio.summary.realizedPnl} />
         ) : (
@@ -86,4 +114,13 @@ export default function App() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
   body: { flex: 1 },
+  searchWrap: { paddingHorizontal: spacing.lg, paddingBottom: spacing.sm },
+  search: {
+    backgroundColor: colors.chip,
+    borderRadius: radius.control,
+    color: colors.text,
+    fontSize: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 11,
+  },
 });

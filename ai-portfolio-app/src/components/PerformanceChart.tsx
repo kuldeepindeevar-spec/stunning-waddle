@@ -1,30 +1,33 @@
 /**
  * Net liquidation value since inception, on a log scale.
  *
- * A 20x move is unreadable on a linear axis — the first three years compress
+ * A multi-fold move is unreadable on a linear axis — the early years compress
  * into the baseline. Log spacing keeps every year legible and makes equal
  * percentage moves equal distances, which is what the axis is for.
+ *
+ * The chart is full-bleed inside its card: it sizes itself to the width it is
+ * given, so it must not sit inside a padded block.
  */
 
 import React, { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import Svg, { Defs, LinearGradient, Path, Stop, Line, Circle } from 'react-native-svg';
+import Svg, { Circle, Defs, LinearGradient, Line, Path, Stop } from 'react-native-svg';
 
-import { colors, mono, spacing, type } from '../theme';
+import { colors, spacing, tabular } from '../theme';
 import { axisDate, wholeMoney } from '../lib/format';
 import type { EquityCurve } from '../lib/history';
 
-type Props = {
+export const PerformanceChart = ({
+  curve,
+  height = 150,
+}: {
   curve: EquityCurve;
   height?: number;
-};
-
-export const PerformanceChart = ({ curve, height = 168 }: Props) => {
+}) => {
   const [width, setWidth] = React.useState(0);
-  const padLeft = 4;
-  const padRight = 52;
-  const padTop = 10;
-  const padBottom = 20;
+  const padRight = 46;
+  const padTop = 8;
+  const padBottom = 18;
 
   const geometry = useMemo(() => {
     const points = curve.points;
@@ -38,9 +41,9 @@ export const PerformanceChart = ({ curve, height = 168 }: Props) => {
     const yMax = Math.max(...ys);
     const ySpan = yMax - yMin || 1;
 
-    const plotW = width - padLeft - padRight;
+    const plotW = width - padRight;
     const plotH = height - padTop - padBottom;
-    const sx = (t: number) => padLeft + ((t - xMin) / (xMax - xMin || 1)) * plotW;
+    const sx = (t: number) => ((t - xMin) / (xMax - xMin || 1)) * plotW;
     const sy = (v: number) =>
       padTop + plotH - ((Math.log(Math.max(v, 1)) - yMin) / ySpan) * plotH;
 
@@ -68,20 +71,19 @@ export const PerformanceChart = ({ curve, height = 168 }: Props) => {
       year += 1;
     }
 
-    const last = points[points.length - 1];
-    return { sx, sy, line, area, gridValues, yearTicks, plotH, last };
+    return { sx, sy, line, area, gridValues, yearTicks, plotH, last: points[points.length - 1] };
   }, [curve, width, height]);
 
   return (
     <View
-      style={[styles.wrap, { height }]}
+      style={{ height }}
       onLayout={(event) => setWidth(event.nativeEvent.layout.width)}
     >
       {geometry ? (
         <>
           <Svg width={width} height={height}>
             <Defs>
-              <LinearGradient id="areaFill" x1="0" y1="0" x2="0" y2="1">
+              <LinearGradient id="curveFill" x1="0" y1="0" x2="0" y2="1">
                 <Stop offset="0" stopColor={colors.chartFillTop} />
                 <Stop offset="1" stopColor={colors.chartFillBottom} />
               </LinearGradient>
@@ -90,7 +92,7 @@ export const PerformanceChart = ({ curve, height = 168 }: Props) => {
             {geometry.gridValues.map((value) => (
               <Line
                 key={`g${value}`}
-                x1={padLeft}
+                x1={0}
                 x2={width - padRight}
                 y1={geometry.sy(value)}
                 y2={geometry.sy(value)}
@@ -110,11 +112,11 @@ export const PerformanceChart = ({ curve, height = 168 }: Props) => {
               />
             ))}
 
-            <Path d={geometry.area} fill="url(#areaFill)" />
+            <Path d={geometry.area} fill="url(#curveFill)" />
             <Path
               d={geometry.line}
               stroke={colors.chartLine}
-              strokeWidth={1.75}
+              strokeWidth={2}
               fill="none"
               strokeLinejoin="round"
               strokeLinecap="round"
@@ -122,7 +124,7 @@ export const PerformanceChart = ({ curve, height = 168 }: Props) => {
             <Circle
               cx={geometry.sx(geometry.last.t)}
               cy={geometry.sy(geometry.last.value)}
-              r={3}
+              r={3.2}
               fill={colors.chartLine}
             />
           </Svg>
@@ -130,7 +132,7 @@ export const PerformanceChart = ({ curve, height = 168 }: Props) => {
           {geometry.gridValues.map((value) => (
             <Text
               key={`l${value}`}
-              style={[styles.axisY, { top: geometry.sy(value) - 6, right: spacing.sm }]}
+              style={[styles.axis, tabular, { top: geometry.sy(value) - 7, right: 6 }]}
             >
               {value >= 1e6 ? `${value / 1e6}M` : `${value / 1e3}K`}
             </Text>
@@ -138,87 +140,43 @@ export const PerformanceChart = ({ curve, height = 168 }: Props) => {
           {geometry.yearTicks.map((t) => (
             <Text
               key={`x${t}`}
-              style={[styles.axisX, { left: geometry.sx(t) - 16, bottom: 2 }]}
+              style={[styles.axis, { left: Math.max(0, geometry.sx(t) - 16), bottom: 0 }]}
             >
               {axisDate(t)}
             </Text>
           ))}
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>
-              LOG SCALE · {curve.basis === 'marked' ? 'MARKED MONTHLY' : 'INDICATIVE PATH'}
-            </Text>
-          </View>
         </>
-      ) : (
-        <View style={styles.empty}>
-          <Text style={styles.emptyText}>Building curve…</Text>
-        </View>
-      )}
+      ) : null}
     </View>
   );
 };
 
-const styles = StyleSheet.create({
-  wrap: {
-    marginTop: spacing.sm,
-    backgroundColor: colors.background,
-  },
-  axisY: {
-    position: 'absolute',
-    fontFamily: mono,
-    fontSize: 9,
-    color: colors.textTertiary,
-  },
-  axisX: {
-    position: 'absolute',
-    fontFamily: mono,
-    fontSize: 9,
-    color: colors.textTertiary,
-  },
-  badge: {
-    position: 'absolute',
-    top: 0,
-    left: spacing.xs,
-  },
-  badgeText: {
-    ...type.micro,
-    fontSize: 8,
-    color: colors.textTertiary,
-  },
-  empty: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  emptyText: { color: colors.textTertiary, fontSize: 12 },
-});
-
-/** Legend line under the chart. */
-export const ChartFooter = ({ curve }: { curve: EquityCurve }) => {
+/** Endpoints and provenance, sitting under the chart inside the padded block. */
+export const ChartCaption = ({ curve }: { curve: EquityCurve }) => {
   if (curve.points.length < 2) return null;
   const first = curve.points[0];
   const last = curve.points[curve.points.length - 1];
   return (
-    <View style={footerStyles.row}>
-      <Text style={footerStyles.text} numberOfLines={1}>
-        {wholeMoney(first.value)} → {wholeMoney(last.value)} ·{' '}
-        {curve.basis === 'marked'
-          ? 'month-end closes replayed against the ledger'
-          : 'endpoints exact, path interpolated'}
+    <View style={styles.caption}>
+      <Text style={[styles.captionText, tabular]}>
+        {wholeMoney(first.value)} → {wholeMoney(last.value)}
+      </Text>
+      <Text style={styles.captionText}>
+        {curve.basis === 'marked' ? 'month-end closes' : 'endpoints exact, path modelled'}
       </Text>
     </View>
   );
 };
 
-const footerStyles = StyleSheet.create({
-  row: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xs,
+const styles = StyleSheet.create({
+  axis: { position: 'absolute', fontSize: 10, color: colors.textTertiary },
+  caption: {
     flexDirection: 'row',
+    alignItems: 'baseline',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    paddingTop: 6,
+    paddingBottom: 2,
     gap: spacing.sm,
   },
-  text: {
-    fontSize: 9,
-    color: colors.textTertiary,
-    fontFamily: mono,
-    flexShrink: 1,
-  },
+  captionText: { fontSize: 11, color: colors.textTertiary, flexShrink: 1 },
 });

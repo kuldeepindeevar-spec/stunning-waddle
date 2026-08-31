@@ -34,8 +34,8 @@ export const INCEPTION_DATE = '2022-06-30';
 export const INITIAL_CAPITAL = 100_000;
 
 export const ACCOUNT = {
-  id: 'U7734829',
-  title: 'AI ALPHA — MARGIN',
+  id: '7734829',
+  title: 'AI Alpha — Margin',
   baseCurrency: 'USD',
   strategy: 'AI value chain, big tech and fintech',
 };

@@ -7,18 +7,18 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { colors, mono, spacing, type } from '../theme';
+import { colors, spacing, tabular } from '../theme';
 import { pct } from '../lib/format';
 import type { ValuedPosition } from '../lib/portfolio';
 
 /**
- * Sequential ramp rather than a categorical palette: the slices are ordered by
- * weight, so a ramp encodes the ordering instead of fighting it.
+ * A warm sequential ramp off the accent rather than a categorical palette: the
+ * slices are ordered by weight, so a ramp encodes that ordering instead of
+ * fighting it.
  */
 const RAMP = [
-  '#2f6fd0', '#3d8bfd', '#5b9ffd', '#77b0fb', '#93c1fa',
-  '#a9cdf8', '#bcd8f7', '#cbe0f6', '#d8e7f5', '#e2ecf5',
-  '#eaf1f7', '#f1f5f9',
+  '#ff7a00', '#ff8d24', '#ff9f42', '#ffb15f', '#ffc07c', '#ffcd96',
+  '#ffd8ac', '#ffe1bf', '#ffe8ce', '#ffeeda', '#fff3e4', '#fff7ee',
 ];
 
 export const AllocationBar = ({
@@ -28,7 +28,7 @@ export const AllocationBar = ({
   positions: ValuedPosition[];
   cashWeight: number;
 }) => (
-  <View style={styles.wrap}>
+  <View>
     <View style={styles.bar}>
       {positions.map((position, index) => (
         <View
@@ -49,7 +49,7 @@ export const AllocationBar = ({
         <View key={position.symbol} style={styles.legendItem}>
           <View style={[styles.swatch, { backgroundColor: RAMP[index % RAMP.length] }]} />
           <Text style={styles.legendSymbol}>{position.symbol}</Text>
-          <Text style={styles.legendWeight}>{pct(position.weight * 100, 1)}</Text>
+          <Text style={[styles.legendWeight, tabular]}>{pct(position.weight * 100, 1)}</Text>
         </View>
       ))}
     </View>
@@ -57,27 +57,10 @@ export const AllocationBar = ({
 );
 
 const styles = StyleSheet.create({
-  wrap: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm },
-  bar: {
-    flexDirection: 'row',
-    height: 10,
-    borderRadius: 2,
-    overflow: 'hidden',
-    gap: 1,
-  },
-  legend: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: spacing.md,
-    gap: spacing.sm,
-  },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    width: '31%',
-  },
-  swatch: { width: 7, height: 7, borderRadius: 1 },
-  legendSymbol: { ...type.micro, color: colors.textSecondary, flex: 1 },
-  legendWeight: { fontFamily: mono, fontSize: 10, color: colors.textTertiary },
+  bar: { flexDirection: 'row', height: 10, borderRadius: 3, overflow: 'hidden', gap: 1 },
+  legend: { flexDirection: 'row', flexWrap: 'wrap', marginTop: spacing.md, gap: spacing.sm },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 5, width: '30%' },
+  swatch: { width: 8, height: 8, borderRadius: 2 },
+  legendSymbol: { fontSize: 12, fontWeight: '600', color: colors.textSecondary, flex: 1 },
+  legendWeight: { fontSize: 11, color: colors.textTertiary },
 });

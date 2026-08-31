@@ -6,6 +6,18 @@ portfolio of AI, big-tech and fintech names funded with a single **$100,000** de
 return of roughly **+398%** — 4.98x in 4.2 years, a 47% CAGR.
 
 Built with Expo / React Native / TypeScript. Runs on iOS, Android and the web.
+`../ai-portfolio.html` is the same app as one self-contained file for the iPhone home
+screen; `npm run verify:html` asserts the two report identical figures.
+
+## Interface
+
+Rounded cards on pure black with a single orange accent, tabular figures, and
+solid-filled percentage chips. Three parts of the chrome are real controls rather than
+decoration: the sector chips filter the blotter (and the section count follows), every
+column header sorts, and the search icon opens a live symbol/name filter across the
+blotter and the watchlist. The "Reconciled" cell in the summary runs the same
+`checkInvariants()` the Audit tab runs, so it cannot claim reconciled while something is
+off.
 
 <!-- Screens: Portfolio · Watchlist · Activity · Audit, plus a position detail sheet. -->
 

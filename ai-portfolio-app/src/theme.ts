@@ -1,34 +1,45 @@
 /**
- * Design tokens for the trading-terminal look: near-black ground, hairline
- * dividers, one accent, and green/red reserved exclusively for P&L sign.
+ * Design tokens.
+ *
+ * A committed single-theme dark world: rounded cards on pure black, one warm
+ * accent, and green/red reserved exclusively for P&L sign. Every colour is
+ * declared here and painted explicitly — nothing inherits a host background.
  */
 
 import { Platform } from 'react-native';
 
 export const colors = {
   background: '#000000',
-  surface: '#0e0f11',
-  surfaceRaised: '#16181c',
-  surfacePressed: '#1e2126',
-  divider: '#22252b',
-  dividerStrong: '#2e3238',
+  card: '#1a1a1c',
+  cardRaised: '#242528',
+  chip: '#1f2023',
+  chipActive: '#3a2410',
+  divider: '#26272b',
+  tabBar: '#0a0a0b',
 
-  text: '#f2f4f7',
-  textSecondary: '#9aa2ad',
-  textTertiary: '#6b727d',
+  text: '#ffffff',
+  textSecondary: '#9ba0a8',
+  textTertiary: '#6d727a',
 
-  accent: '#d81222',
-  accentMuted: '#3a1216',
-  info: '#3d8bfd',
+  /** The single accent. Never used to mean good or bad. */
+  brand: '#ff7a00',
+  brandSoft: 'rgba(255,122,0,0.14)',
+  accountMark: '#2b7fff',
 
-  gain: '#00c26e',
-  loss: '#ff4d4f',
-  flat: '#9aa2ad',
+  gain: '#00c46a',
+  loss: '#f4485c',
+  flat: '#9ba0a8',
+  /** Solid chip fills — the loudest element in a list. */
+  gainFill: '#00b761',
+  lossFill: '#e5384c',
+  gainWash: 'rgba(0,196,106,0.14)',
+  lossWash: 'rgba(244,72,92,0.14)',
+  brandWash: 'rgba(255,122,0,0.14)',
 
-  chartLine: '#3d8bfd',
-  chartFillTop: 'rgba(61,139,253,0.28)',
-  chartFillBottom: 'rgba(61,139,253,0.0)',
-  grid: '#1b1e23',
+  chartLine: '#ff7a00',
+  chartFillTop: 'rgba(255,122,0,0.30)',
+  chartFillBottom: 'rgba(255,122,0,0)',
+  grid: '#1e1f23',
 } as const;
 
 export const spacing = {
@@ -40,23 +51,34 @@ export const spacing = {
   xxl: 32,
 } as const;
 
+export const radius = {
+  card: 14,
+  chip: 9,
+  pill: 5,
+  control: 10,
+} as const;
+
 /**
- * Tabular figures matter more than the typeface here: columns of numbers have
- * to line up as the last price ticks.
+ * Figures are set in the UI face, not a monospace one, and aligned with
+ * tabular figures instead — columns hold still as prices tick while the
+ * numbers still read like the rest of the interface.
  */
-export const mono = Platform.select({
-  ios: 'Menlo',
-  android: 'monospace',
-  default: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
-}) as string;
+export const tabular = Platform.select({
+  ios: { fontVariant: ['tabular-nums' as const] },
+  android: { fontVariant: ['tabular-nums' as const] },
+  default: { fontVariant: ['tabular-nums' as const] },
+}) as { fontVariant: ('tabular-nums')[] };
 
 export const type = {
-  hero: { fontSize: 38, fontWeight: '300' as const, letterSpacing: -0.5 },
-  title: { fontSize: 20, fontWeight: '600' as const },
-  section: { fontSize: 11, fontWeight: '700' as const, letterSpacing: 1.1 },
+  screenTitle: { fontSize: 22, fontWeight: '700' as const, letterSpacing: -0.4 },
+  hero: { fontSize: 30, fontWeight: '600' as const, letterSpacing: -0.8 },
+  mid: { fontSize: 20, fontWeight: '700' as const, letterSpacing: -0.3 },
+  section: { fontSize: 17, fontWeight: '700' as const, letterSpacing: -0.2 },
+  rowPrimary: { fontSize: 15, fontWeight: '600' as const },
   body: { fontSize: 14, fontWeight: '500' as const },
-  bodySm: { fontSize: 12, fontWeight: '500' as const },
-  micro: { fontSize: 10, fontWeight: '600' as const, letterSpacing: 0.4 },
+  label: { fontSize: 12, fontWeight: '400' as const },
+  sub: { fontSize: 12, fontWeight: '400' as const },
+  micro: { fontSize: 10, fontWeight: '700' as const, letterSpacing: 0.4 },
 } as const;
 
 /** Green for a gain, red for a loss, grey for exactly flat. */

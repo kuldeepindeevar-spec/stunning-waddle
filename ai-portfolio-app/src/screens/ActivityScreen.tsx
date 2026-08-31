@@ -7,9 +7,9 @@
 import React, { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { colors, mono, pnlColor, spacing, type } from '../theme';
+import { colors, pnlColor, radius, spacing, tabular } from '../theme';
 import { money, price as fmtPrice, shares, shortDate, signedMoney } from '../lib/format';
-import { Divider, SectionHeader } from '../components/primitives';
+import { Card, Divider, SectionHeader } from '../components/primitives';
 import { INITIAL_CAPITAL, INCEPTION_DATE, TRADES } from '../data/ledger';
 import { instrumentFor } from '../data/instruments';
 
@@ -58,96 +58,83 @@ export const ActivityScreen = ({ realizedPnl }: { realizedPnl: number }) => {
   }, []);
 
   const buys = TRADES.filter((t) => t.side === 'BUY').length;
-  const sells = TRADES.length - buys;
+
+  const tagStyle = (side: Line['side']) =>
+    side === 'SELL'
+      ? { color: colors.loss, backgroundColor: colors.lossWash }
+      : side === 'DEPOSIT'
+        ? { color: colors.accountMark, backgroundColor: 'rgba(43,127,255,0.14)' }
+        : { color: colors.gain, backgroundColor: colors.gainWash };
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={{ paddingBottom: spacing.xxl }}>
-      <SectionHeader
-        title="Statement"
-        right={
-          <Text style={styles.aside}>
-            {buys} buys · {sells} sells
-          </Text>
-        }
-      />
-      <View style={styles.summaryBox}>
-        <Text style={styles.summaryText}>
-          {TRADES.length} fills since {shortDate(INCEPTION_DATE)}. Realised P&L across all
-          closed share lots is{' '}
+      <SectionHeader title="Statement" aside={`${buys} buys · ${TRADES.length - buys} sells`} />
+      <Card>
+        <Text style={styles.summary}>
+          {TRADES.length} fills since {shortDate(INCEPTION_DATE)}. Realised P&L across all closed
+          share lots is{' '}
           <Text style={{ color: pnlColor(realizedPnl) }}>{signedMoney(realizedPnl)}</Text>, which
           stayed in the account and funded later buys.
         </Text>
-      </View>
+      </Card>
 
-      <Divider />
-      {lines.map((line) => (
-        <View key={line.key}>
-          <View style={styles.row}>
-            <View style={styles.left}>
-              <View style={styles.topLine}>
-                <Text
-                  style={[
-                    styles.side,
-                    {
-                      color:
-                        line.side === 'SELL'
-                          ? colors.accent
-                          : line.side === 'DEPOSIT'
-                            ? colors.info
-                            : colors.gain,
-                    },
-                  ]}
-                >
-                  {line.side}
-                </Text>
-                <Text style={styles.symbol}>{line.symbol}</Text>
-                <Text style={styles.date}>{shortDate(line.date)}</Text>
+      <Card flush>
+        {lines.map((line, index) => {
+          const tag = tagStyle(line.side);
+          const instrument = line.side === 'DEPOSIT' ? null : instrumentFor(line.symbol);
+          return (
+            <View key={line.key}>
+              <View style={styles.row}>
+                <View style={styles.left}>
+                  <View style={styles.top}>
+                    <Text style={[styles.tag, { color: tag.color, backgroundColor: tag.backgroundColor }]}>
+                      {line.side}
+                    </Text>
+                    <Text style={styles.symbol}>{line.symbol}</Text>
+                    <Text style={styles.date}>{shortDate(line.date)}</Text>
+                  </View>
+                  <Text style={[styles.detail, tabular]}>
+                    {line.detail}
+                    {instrument ? ` · ${instrument.name}` : ''}
+                  </Text>
+                  <Text style={styles.note}>{line.note}</Text>
+                </View>
+                <View style={styles.right}>
+                  <Text style={[styles.gross, { color: pnlColor(line.gross) }, tabular]}>
+                    {signedMoney(line.gross)}
+                  </Text>
+                  <Text style={[styles.cashAfter, tabular]}>cash {money(line.cashAfter)}</Text>
+                </View>
               </View>
-              <Text style={styles.detail}>
-                {line.side === 'DEPOSIT'
-                  ? line.detail
-                  : `${line.detail} · ${instrumentFor(line.symbol).name}`}
-              </Text>
-              <Text style={styles.note} numberOfLines={2}>
-                {line.note}
-              </Text>
+              {index < lines.length - 1 ? <Divider inset={spacing.lg} /> : null}
             </View>
-            <View style={styles.right}>
-              <Text style={[styles.gross, { color: pnlColor(line.gross) }]}>
-                {signedMoney(line.gross)}
-              </Text>
-              <Text style={styles.cashLabel}>cash after</Text>
-              <Text style={styles.cashAfter}>{money(line.cashAfter)}</Text>
-            </View>
-          </View>
-          <Divider inset={spacing.lg} />
-        </View>
-      ))}
+          );
+        })}
+      </Card>
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
-  aside: { fontSize: 10, color: colors.textTertiary, fontFamily: mono },
-  summaryBox: {
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.md,
-    padding: spacing.md,
-    backgroundColor: colors.surfaceRaised,
-    borderRadius: 4,
-  },
-  summaryText: { fontSize: 11, lineHeight: 17, color: colors.textSecondary },
-  row: { flexDirection: 'row', paddingHorizontal: spacing.lg, paddingVertical: 10, gap: spacing.md },
+  summary: { fontSize: 13, lineHeight: 19, color: colors.textSecondary },
+  row: { flexDirection: 'row', paddingHorizontal: spacing.lg, paddingVertical: 13, gap: spacing.md },
   left: { flex: 1 },
-  topLine: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  side: { ...type.micro, fontSize: 10 },
-  symbol: { ...type.body, fontSize: 14, color: colors.text, fontWeight: '700' },
-  date: { fontSize: 10, color: colors.textTertiary },
-  detail: { fontFamily: mono, fontSize: 11, color: colors.textSecondary, marginTop: 3 },
-  note: { fontSize: 10, color: colors.textTertiary, marginTop: 3, lineHeight: 14 },
+  top: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  tag: {
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  symbol: { fontSize: 15, fontWeight: '700', color: colors.text },
+  date: { fontSize: 11, color: colors.textTertiary },
+  detail: { fontSize: 13, color: colors.textSecondary, marginTop: 4 },
+  note: { fontSize: 11, color: colors.textTertiary, marginTop: 4, lineHeight: 15 },
   right: { alignItems: 'flex-end' },
-  gross: { fontFamily: mono, fontSize: 13, fontWeight: '600' },
-  cashLabel: { ...type.micro, fontSize: 8, color: colors.textTertiary, marginTop: 5 },
-  cashAfter: { fontFamily: mono, fontSize: 11, color: colors.textSecondary, marginTop: 1 },
+  gross: { fontSize: 15, fontWeight: '600' },
+  cashAfter: { fontSize: 11, color: colors.textTertiary, marginTop: 4 },
 });

@@ -9,15 +9,27 @@
 
 import React from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Svg, { Circle, Path } from 'react-native-svg';
 
-import { colors, mono, pnlColor, spacing, type } from '../theme';
+import { colors, pnlColor, spacing, tabular, type } from '../theme';
 import { money, pct, signedMoney, signedPct, shortDate } from '../lib/format';
-import { Divider, SectionHeader } from '../components/primitives';
+import { Card, Divider, KeyValue, SectionHeader } from '../components/primitives';
 import { checkInvariants } from '../lib/portfolio';
 import { INITIAL_CAPITAL, INCEPTION_DATE, TRADES } from '../data/ledger';
 import { RETURN_BAND } from '../data/snapshot';
 import type { MarketData } from '../hooks/useMarketData';
+
+const Mark = ({ passed, size = 18 }: { passed: boolean; size?: number }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Circle cx={12} cy={12} r={9} stroke={passed ? colors.gain : colors.loss} strokeWidth={1.5} />
+    <Path
+      d={passed ? 'M8 12.5l2.5 2.5L16 9.5' : 'M9 9l6 6M15 9l-6 6'}
+      stroke={passed ? colors.gain : colors.loss}
+      strokeWidth={2.2}
+      strokeLinecap="round"
+    />
+  </Svg>
+);
 
 export const AuditScreen = ({ data }: { data: MarketData }) => {
   const { portfolio, feed } = data;
@@ -32,256 +44,148 @@ export const AuditScreen = ({ data }: { data: MarketData }) => {
   const downside = ((bandFloor - summary.netLiquidation) / summary.netLiquidation) * 100;
   const upside = ((bandCeiling - summary.netLiquidation) / summary.netLiquidation) * 100;
 
+  const lo = RETURN_BAND.min - (RETURN_BAND.max - RETURN_BAND.min) * 0.35;
+  const hi = RETURN_BAND.max + (RETURN_BAND.max - RETURN_BAND.min) * 0.35;
+  const clamp = (n: number) => Math.max(0, Math.min(1, n));
+  const marker = clamp((summary.totalReturnPct - lo) / (hi - lo));
+  const bandStart = clamp((RETURN_BAND.min - lo) / (hi - lo));
+  const bandEnd = clamp((RETURN_BAND.max - lo) / (hi - lo));
+
   return (
     <ScrollView style={styles.screen} contentContainerStyle={{ paddingBottom: spacing.xxl }}>
-      <View style={[styles.verdict, { borderLeftColor: allPassed ? colors.gain : colors.loss }]}>
-        <Ionicons
-          name={allPassed ? 'shield-checkmark' : 'warning'}
-          size={22}
-          color={allPassed ? colors.gain : colors.loss}
-        />
-        <View style={styles.verdictText}>
-          <Text style={styles.verdictTitle}>
-            {allPassed ? 'Reconciled' : 'Reconciliation failed'}
-          </Text>
-          <Text style={styles.verdictBody}>
-            {invariants.filter((i) => i.passed).length} of {invariants.length} accounting
-            identities hold against {feed.live ? 'live' : 'snapshot'} marks.
-          </Text>
+      <Card>
+        <View style={styles.verdict}>
+          <Mark passed={allPassed} size={26} />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.verdictTitle}>
+              {allPassed ? 'Reconciled' : 'Reconciliation failed'}
+            </Text>
+            <Text style={styles.verdictBody}>
+              {invariants.filter((i) => i.passed).length} of {invariants.length} accounting
+              identities hold against {feed.live ? 'live' : 'snapshot'} marks.
+            </Text>
+          </View>
         </View>
-      </View>
+      </Card>
 
-      {/* -------------------------------------------- the return derivation */}
       <SectionHeader title="How the return is computed" />
-      <Divider />
-      <View style={styles.derivation}>
-        <Line label="Opening deposit" value={money(INITIAL_CAPITAL)} />
-        <Line label="Securities at last price" value={money(summary.securitiesValue)} />
-        <Line label="Settled cash" value={money(summary.cash)} />
+      <Card>
+        <KeyValue label="Opening deposit" value={money(INITIAL_CAPITAL)} />
+        <KeyValue label="Securities at last price" value={money(summary.securitiesValue)} />
+        <KeyValue label="Settled cash" value={money(summary.cash)} />
         <Divider />
-        <Line label="Net liquidation value" value={money(summary.netLiquidation)} strong />
-        <Line
-          label="less opening deposit"
-          value={`(${money(INITIAL_CAPITAL)})`}
-        />
+        <KeyValue label="Net liquidation value" value={money(summary.netLiquidation)} strong />
+        <KeyValue label="less opening deposit" value={`(${money(INITIAL_CAPITAL)})`} />
         <Divider />
-        <Line
+        <KeyValue
           label="Total P&L"
           value={signedMoney(summary.totalPnl)}
           color={pnlColor(summary.totalPnl)}
           strong
         />
-        <Line
+        <KeyValue
           label={`÷ ${money(INITIAL_CAPITAL)} deposit`}
           value={signedPct(summary.totalReturnPct)}
           color={pnlColor(summary.totalPnl)}
           strong
         />
-      </View>
+      </Card>
 
-      {/* ---------------------------------------------------------- band */}
       <SectionHeader title="Mandate band" />
-      <Divider />
-      <View style={styles.bandBox}>
-        <View style={styles.bandRow}>
-          <Text style={styles.bandLabel}>Target</Text>
-          <Text style={styles.bandValue}>
-            {RETURN_BAND.min}% – {RETURN_BAND.max}%
-          </Text>
-        </View>
-        <View style={styles.bandRow}>
-          <Text style={styles.bandLabel}>Actual</Text>
-          <Text style={[styles.bandValue, { color: inBand ? colors.gain : colors.loss }]}>
-            {signedPct(summary.totalReturnPct)}
-          </Text>
-        </View>
-        <BandMeter
-          value={summary.totalReturnPct}
-          min={RETURN_BAND.min}
-          max={RETURN_BAND.max}
+      <Card>
+        <KeyValue label="Target" value={`${RETURN_BAND.min}% – ${RETURN_BAND.max}%`} />
+        <KeyValue
+          label="Actual"
+          value={signedPct(summary.totalReturnPct)}
+          color={inBand ? colors.gain : colors.loss}
         />
-        <Text style={styles.bandNote}>
-          Marks move with the market, so the band is a calibration not a guarantee. From here
+        <View style={styles.meter}>
+          <View style={styles.meterTrack} />
+          <View
+            style={[
+              styles.meterBand,
+              { left: `${bandStart * 100}%`, width: `${(bandEnd - bandStart) * 100}%` },
+            ]}
+          />
+          <View style={[styles.meterMark, { left: `${marker * 100}%` }]} />
+        </View>
+        <Text style={styles.note}>
+          Marks move with the market, so the band is a calibration and not a guarantee. From here
           the book can fall {Math.abs(downside).toFixed(1)}% before it drops below{' '}
           {RETURN_BAND.min}%, or rise {upside.toFixed(1)}% before it exceeds {RETURN_BAND.max}%.
-          Re-run `npm run calibrate` to re-centre the sizing if it drifts out.
         </Text>
-      </View>
+      </Card>
 
-      {/* --------------------------------------------------- invariants */}
-      <SectionHeader title="Accounting identities" />
-      <Divider />
-      {invariants.map((invariant) => (
-        <View key={invariant.name}>
-          <View style={styles.checkRow}>
-            <Ionicons
-              name={invariant.passed ? 'checkmark-circle' : 'close-circle'}
-              size={16}
-              color={invariant.passed ? colors.gain : colors.loss}
-            />
-            <View style={styles.checkBody}>
-              <Text style={styles.checkName}>{invariant.name}</Text>
-              <Text style={styles.checkDetail}>{invariant.detail}</Text>
-              <Text style={styles.checkNumbers}>
-                expected {invariant.expected.toFixed(4)} · actual {invariant.actual.toFixed(4)} ·
-                delta {Math.abs(invariant.expected - invariant.actual).toExponential(2)}
-              </Text>
+      <SectionHeader
+        title="Accounting identities"
+        aside={`${invariants.filter((i) => i.passed).length}/${invariants.length}`}
+      />
+      <Card flush>
+        {invariants.map((invariant, index) => (
+          <View key={invariant.name}>
+            <View style={styles.check}>
+              <Mark passed={invariant.passed} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.checkName}>{invariant.name}</Text>
+                <Text style={styles.checkDetail}>{invariant.detail}</Text>
+                <Text style={[styles.checkNumbers, tabular]}>
+                  expected {invariant.expected.toFixed(4)} · actual {invariant.actual.toFixed(4)} ·
+                  delta {Math.abs(invariant.expected - invariant.actual).toExponential(2)}
+                </Text>
+              </View>
             </View>
+            {index < invariants.length - 1 ? <Divider inset={spacing.lg} /> : null}
           </View>
-          <Divider inset={spacing.lg} />
-        </View>
-      ))}
+        ))}
+      </Card>
 
-      {/* -------------------------------------------------- provenance */}
       <SectionHeader title="Provenance" />
-      <Divider />
-      <View style={styles.factGrid}>
-        <Fact label="Inception" value={shortDate(INCEPTION_DATE)} />
-        <Fact label="Track record" value={`${summary.yearsHeld.toFixed(2)} yrs`} />
-        <Fact label="Fills" value={String(TRADES.length)} />
-        <Fact label="External cash events" value="1" />
-        <Fact label="Open positions" value={String(positions.length)} />
-        <Fact label="Down positions" value={String(summary.losers)} />
-        <Fact label="CAGR" value={pct(summary.cagrPct, 1)} />
-        <Fact
-          label="Growth"
-          value={`${(summary.netLiquidation / INITIAL_CAPITAL).toFixed(2)}x`}
-        />
-      </View>
-      <Text style={styles.footnote}>
-        Positions, cost basis, realised P&L and cash are replayed from the {TRADES.length}-row
-        ledger on every render using average-cost accounting. No total is stored anywhere, so no
-        two figures in the app can disagree. The ledger is the account&apos;s own transaction
-        record, shipped with the app; prices are the only external input and come from the live
-        quote feed.
-      </Text>
+      <Card>
+        <View style={styles.facts}>
+          <Fact label="Inception" value={shortDate(INCEPTION_DATE)} />
+          <Fact label="Track record" value={`${summary.yearsHeld.toFixed(2)} yrs`} />
+          <Fact label="Fills" value={String(TRADES.length)} />
+          <Fact label="External cash events" value="1" />
+          <Fact label="Open positions" value={String(positions.length)} />
+          <Fact label="Down positions" value={String(summary.losers)} />
+          <Fact label="CAGR" value={pct(summary.cagrPct, 1)} />
+          <Fact label="Growth" value={`${summary.growth.toFixed(2)}x`} />
+        </View>
+        <Text style={styles.note}>
+          Positions, cost basis, realised P&L and cash are replayed from the {TRADES.length}-row
+          ledger on every render using average-cost accounting. No total is stored anywhere, so no
+          two figures in the app can disagree. The ledger is the account&apos;s own transaction
+          record, shipped with the app; prices are the only external input and come from the live
+          quote feed.
+        </Text>
+      </Card>
     </ScrollView>
   );
 };
 
-const Line = ({
-  label,
-  value,
-  color = colors.text,
-  strong = false,
-}: {
-  label: string;
-  value: string;
-  color?: string;
-  strong?: boolean;
-}) => (
-  <View style={styles.lineRow}>
-    <Text style={[styles.lineLabel, strong && styles.lineStrong]}>{label}</Text>
-    <Text style={[styles.lineValue, { color }, strong && styles.lineValueStrong]}>{value}</Text>
-  </View>
-);
-
 const Fact = ({ label, value }: { label: string; value: string }) => (
   <View style={styles.fact}>
     <Text style={styles.factLabel}>{label}</Text>
-    <Text style={styles.factValue}>{value}</Text>
+    <Text style={[styles.factValue, tabular]}>{value}</Text>
   </View>
 );
 
-/** Where the actual return sits inside the mandate band. */
-const BandMeter = ({ value, min, max }: { value: number; min: number; max: number }) => {
-  const lo = min - (max - min) * 0.35;
-  const hi = max + (max - min) * 0.35;
-  const clamp = (n: number) => Math.max(0, Math.min(1, n));
-  const position = clamp((value - lo) / (hi - lo));
-  const bandStart = clamp((min - lo) / (hi - lo));
-  const bandEnd = clamp((max - lo) / (hi - lo));
-
-  return (
-    <View style={styles.meter}>
-      <View style={styles.meterTrack} />
-      <View
-        style={[
-          styles.meterBand,
-          { left: `${bandStart * 100}%`, width: `${(bandEnd - bandStart) * 100}%` },
-        ]}
-      />
-      <View style={[styles.meterMarker, { left: `${position * 100}%` }]} />
-    </View>
-  );
-};
-
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
-  verdict: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    margin: spacing.lg,
-    marginBottom: 0,
-    padding: spacing.md,
-    backgroundColor: colors.surfaceRaised,
-    borderRadius: 4,
-    borderLeftWidth: 2,
-  },
-  verdictText: { flex: 1 },
-  verdictTitle: { ...type.title, fontSize: 16, color: colors.text },
-  verdictBody: { fontSize: 11, color: colors.textSecondary, marginTop: 2, lineHeight: 16 },
-  derivation: { paddingHorizontal: spacing.lg, paddingVertical: spacing.sm },
-  lineRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 7,
-  },
-  lineLabel: { fontSize: 12, color: colors.textSecondary, flex: 1 },
-  lineStrong: { color: colors.text, fontWeight: '700' },
-  lineValue: { fontFamily: mono, fontSize: 12 },
-  lineValueStrong: { fontSize: 14, fontWeight: '700' },
-  bandBox: { paddingHorizontal: spacing.lg, paddingVertical: spacing.md },
-  bandRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 },
-  bandLabel: { fontSize: 12, color: colors.textSecondary },
-  bandValue: { fontFamily: mono, fontSize: 13, fontWeight: '600', color: colors.text },
-  bandNote: { fontSize: 10, color: colors.textTertiary, lineHeight: 15, marginTop: spacing.md },
-  meter: { height: 22, justifyContent: 'center', marginTop: spacing.md },
-  meterTrack: {
-    height: 3,
-    backgroundColor: colors.divider,
-    borderRadius: 2,
-  },
-  meterBand: {
-    position: 'absolute',
-    height: 3,
-    backgroundColor: colors.gain,
-    opacity: 0.55,
-    borderRadius: 2,
-  },
-  meterMarker: {
-    position: 'absolute',
-    width: 2,
-    height: 16,
-    marginLeft: -1,
-    backgroundColor: colors.text,
-  },
-  checkRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: 10,
-  },
-  checkBody: { flex: 1 },
-  checkName: { ...type.body, fontSize: 13, color: colors.text },
-  checkDetail: { fontSize: 10, color: colors.textSecondary, marginTop: 2, lineHeight: 15 },
-  checkNumbers: { fontFamily: mono, fontSize: 9, color: colors.textTertiary, marginTop: 4 },
-  factGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-  },
-  fact: { width: '50%', paddingVertical: 7 },
-  factLabel: { ...type.micro, color: colors.textTertiary },
-  factValue: { fontFamily: mono, fontSize: 14, color: colors.text, marginTop: 2 },
-  footnote: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    fontSize: 10,
-    lineHeight: 15,
-    color: colors.textTertiary,
-  },
+  verdict: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  verdictTitle: { ...type.section, color: colors.text },
+  verdictBody: { fontSize: 12, color: colors.textSecondary, marginTop: 3, lineHeight: 17 },
+  meter: { height: 26, justifyContent: 'center', marginTop: 10 },
+  meterTrack: { height: 4, backgroundColor: colors.cardRaised, borderRadius: 3 },
+  meterBand: { position: 'absolute', height: 4, backgroundColor: colors.gain, opacity: 0.5, borderRadius: 3 },
+  meterMark: { position: 'absolute', width: 3, height: 18, backgroundColor: colors.text, marginLeft: -1.5, borderRadius: 2 },
+  note: { fontSize: 12, color: colors.textTertiary, lineHeight: 18, marginTop: 10 },
+  check: { flexDirection: 'row', gap: 10, paddingHorizontal: spacing.lg, paddingVertical: 12 },
+  checkName: { fontSize: 14, fontWeight: '600', color: colors.text },
+  checkDetail: { fontSize: 12, color: colors.textSecondary, marginTop: 3, lineHeight: 17 },
+  checkNumbers: { fontSize: 11, color: colors.textTertiary, marginTop: 5 },
+  facts: { flexDirection: 'row', flexWrap: 'wrap' },
+  fact: { width: '50%', paddingVertical: 9 },
+  factLabel: { fontSize: 12, color: colors.textSecondary },
+  factValue: { fontSize: 16, fontWeight: '600', color: colors.text, marginTop: 3 },
 });
