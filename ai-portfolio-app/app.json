@@ -1,0 +1,26 @@
+{
+  "expo": {
+    "name": "AI Alpha Portfolio",
+    "slug": "ai-alpha-portfolio",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#000000",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#000000"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.aialpha.portfolio"
+    },
+    "android": {
+      "package": "com.aialpha.portfolio",
+      "adaptiveIcon": { "backgroundColor": "#000000" }
+    },
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}

@@ -44,3 +44,18 @@ State is written through `window.storage` under `pgy-verdict:*` keys, every call
 in try/catch. `localStorage` and `sessionStorage` are never used — they fail in Claude
 artifacts. Where storage is unavailable the page says so plainly and still works; entries
 just do not survive a reload. Reset is guarded by a typed `RESET` confirmation.
+
+---
+
+# AI Alpha Portfolio (`ai-portfolio-app/`)
+
+An unrelated second project in this repository: a mobile trading-terminal app showing a
+concentrated AI portfolio funded with a single $100,000 deposit in June 2022, marked
+against live market prices, currently at roughly +1,950% total return.
+
+Expo / React Native / TypeScript, iOS + Android + web. Every figure is derived from a
+21-row transaction ledger on each render — no stored totals — and `npm run audit`
+asserts the accounting identities and the mandate constraints from the command line.
+
+See [`ai-portfolio-app/README.md`](ai-portfolio-app/README.md) and the reconciliation in
+[`ai-portfolio-app/docs/AUDIT.md`](ai-portfolio-app/docs/AUDIT.md).

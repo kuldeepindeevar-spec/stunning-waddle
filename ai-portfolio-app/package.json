@@ -1,0 +1,38 @@
+{
+  "name": "ai-alpha-portfolio",
+  "version": "1.0.0",
+  "main": "index.js",
+  "private": true,
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "typecheck": "tsc --noEmit",
+    "audit": "tsx scripts/audit.ts",
+    "calibrate": "tsx scripts/calibrate.ts",
+    "test": "tsx scripts/audit.ts",
+    "build:web": "expo export --platform web --output-dir dist",
+    "shots": "node scripts/shots.mjs shots"
+  },
+  "dependencies": {
+    "@expo/metro-runtime": "~4.0.1",
+    "expo": "~52.0.0",
+    "expo-asset": "~11.0.5",
+    "expo-font": "~13.0.4",
+    "expo-status-bar": "~2.0.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "react-native": "0.76.9",
+    "react-native-safe-area-context": "4.12.0",
+    "react-native-svg": "15.8.0",
+    "react-native-web": "~0.19.13"
+  },
+  "devDependencies": {
+    "@types/node": "^26.4.0",
+    "@types/react": "~18.3.12",
+    "playwright": "^1.62.1",
+    "tsx": "^4.19.2",
+    "typescript": "~5.3.3"
+  }
+}
