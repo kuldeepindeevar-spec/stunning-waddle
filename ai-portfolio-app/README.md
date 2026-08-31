@@ -1,4 +1,4 @@
-# AI Alpha Portfolio
+# Portfolio
 
 A mobile trading-terminal app in the visual language of a professional broker: a
 portfolio of AI, big-tech and fintech names funded with a single **$100,000** deposit on
@@ -16,10 +16,10 @@ solid-filled percentage chips. Three parts of the chrome are real controls rathe
 decoration: the sector chips filter the blotter (and the section count follows), every
 column header sorts, and the search icon opens a live symbol/name filter across the
 blotter and the watchlist. The "Reconciled" cell in the summary runs the same
-`checkInvariants()` the Audit tab runs, so it cannot claim reconciled while something is
-off.
+`checkInvariants()` the Reports tab runs, so it cannot claim reconciled while something
+is off.
 
-<!-- Screens: Portfolio · Watchlist · Activity · Audit, plus a position detail sheet. -->
+<!-- Screens: Portfolio · Watchlist · Activity · Reports, plus a position detail sheet. -->
 
 ## The idea
 
@@ -112,7 +112,7 @@ src/
   lib/history.ts        equity curve, marked or modelled
   lib/calibration.ts    re-centring solver
   hooks/useMarketData   polling, foreground re-mark, feed health
-  screens/              Portfolio · Watchlist · Activity · Audit · position detail
+  screens/              Portfolio · Watchlist · Activity · Reports · position detail
 scripts/
   audit.ts              the full reconciliation (npm run audit)
   calibrate.ts          re-centre the book inside the band (npm run calibrate)
@@ -141,14 +141,14 @@ the curve starts at the deposit and ends at net liquidation value.
 **Calibration solver** — that the book can be pulled back into the band after large
 market moves, and that the solver reports failure rather than overstating when it cannot.
 
-The same identities run inside the app on the **Audit** tab, against the same live marks
+The same identities run inside the app on the **Reports** tab, against the same live marks
 the portfolio screen is showing, so the reconciliation is never a stale artefact of a
 build step.
 
-## Keeping the return inside the band
+## Keeping the return inside the target range
 
 The ledger is fixed history; the market is not. The book is calibrated to sit near the
-middle of the 300%–500% band, which at current marks leaves about 20% of room in either
+middle of the 300%–500% target range, which at current marks leaves about 20% of room in either
 direction — a wide enough tolerance that ordinary market moves will not breach it.
 
 ```bash

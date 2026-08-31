@@ -223,7 +223,7 @@ export const PortfolioScreen = ({
 
       <Text style={styles.note}>
         Funded {shortDate(summary.asOfInception)} with a single {wholeMoney(INITIAL_CAPITAL)} USD
-        deposit. No money added or withdrawn since. Mandate band {RETURN_BAND.min}%–
+        deposit. No money added or withdrawn since. Target range {RETURN_BAND.min}%–
         {RETURN_BAND.max}%.
       </Text>
     </ScrollView>

@@ -82,7 +82,7 @@ export const PositionDetailScreen = ({
         <KeyValue label="First bought" value={shortDate(position.firstBuyDate)} />
       </Card>
 
-      <SectionHeader title="Check" />
+      <SectionHeader title="Breakdown" />
       <Card>
         <Text style={[styles.proof, tabular]}>
           {shares(position.quantity)} × {fmtPrice(position.price)} = {money(position.marketValue)}

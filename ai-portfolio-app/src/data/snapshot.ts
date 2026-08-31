@@ -32,5 +32,5 @@ export const SNAPSHOT: Record<string, SnapshotQuote> = {
   PYPL: { price: 70.01, previousClose: 69.20 },
 };
 
-/** Mandate band the portfolio is calibrated to sit inside. */
+/** Target return range the portfolio is calibrated to sit inside. */
 export const RETURN_BAND = { min: 300, max: 500 } as const;

@@ -61,14 +61,14 @@ export const AuditScreen = ({ data }: { data: MarketData }) => {
               {allPassed ? 'Reconciled' : 'Reconciliation failed'}
             </Text>
             <Text style={styles.verdictBody}>
-              {invariants.filter((i) => i.passed).length} of {invariants.length} accounting
-              identities hold against {feed.live ? 'live' : 'snapshot'} marks.
+              {invariants.filter((i) => i.passed).length} of {invariants.length} balance checks
+              pass against {feed.live ? 'live' : 'snapshot'} marks.
             </Text>
           </View>
         </View>
       </Card>
 
-      <SectionHeader title="How the return is computed" />
+      <SectionHeader title="How your return is calculated" />
       <Card>
         <KeyValue label="Opening deposit" value={money(INITIAL_CAPITAL)} />
         <KeyValue label="Securities at last price" value={money(summary.securitiesValue)} />
@@ -91,7 +91,7 @@ export const AuditScreen = ({ data }: { data: MarketData }) => {
         />
       </Card>
 
-      <SectionHeader title="Mandate band" />
+      <SectionHeader title="Target range" />
       <Card>
         <KeyValue label="Target" value={`${RETURN_BAND.min}% – ${RETURN_BAND.max}%`} />
         <KeyValue
@@ -110,14 +110,14 @@ export const AuditScreen = ({ data }: { data: MarketData }) => {
           <View style={[styles.meterMark, { left: `${marker * 100}%` }]} />
         </View>
         <Text style={styles.note}>
-          Marks move with the market, so the band is a calibration and not a guarantee. From here
-          the book can fall {Math.abs(downside).toFixed(1)}% before it drops below{' '}
+          Marks move with the market, so the target is a calibration and not a guarantee. From
+          here the account can fall {Math.abs(downside).toFixed(1)}% before it drops below{' '}
           {RETURN_BAND.min}%, or rise {upside.toFixed(1)}% before it exceeds {RETURN_BAND.max}%.
         </Text>
       </Card>
 
       <SectionHeader
-        title="Accounting identities"
+        title="Reconciliation"
         aside={`${invariants.filter((i) => i.passed).length}/${invariants.length}`}
       />
       <Card flush>
@@ -139,7 +139,7 @@ export const AuditScreen = ({ data }: { data: MarketData }) => {
         ))}
       </Card>
 
-      <SectionHeader title="Provenance" />
+      <SectionHeader title="Account details" />
       <Card>
         <View style={styles.facts}>
           <Fact label="Inception" value={shortDate(INCEPTION_DATE)} />

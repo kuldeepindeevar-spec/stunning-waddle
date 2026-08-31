@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "AI Alpha Portfolio",
-    "slug": "ai-alpha-portfolio",
+    "name": "Portfolio",
+    "slug": "portfolio-terminal",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
@@ -10,14 +10,18 @@
       "resizeMode": "contain",
       "backgroundColor": "#000000"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.aialpha.portfolio"
+      "bundleIdentifier": "com.portfolio.terminal"
     },
     "android": {
-      "package": "com.aialpha.portfolio",
-      "adaptiveIcon": { "backgroundColor": "#000000" }
+      "package": "com.portfolio.terminal",
+      "adaptiveIcon": {
+        "backgroundColor": "#000000"
+      }
     },
     "web": {
       "bundler": "metro"

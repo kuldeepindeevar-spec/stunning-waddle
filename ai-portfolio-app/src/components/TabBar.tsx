@@ -44,7 +44,7 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: 'portfolio', label: 'Portfolio' },
   { key: 'watchlist', label: 'Watchlist' },
   { key: 'activity', label: 'Activity' },
-  { key: 'audit', label: 'Audit' },
+  { key: 'audit', label: 'Reports' },
 ];
 
 export const TabBar = ({

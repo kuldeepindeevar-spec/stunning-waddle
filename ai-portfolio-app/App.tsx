@@ -23,7 +23,7 @@ const TITLES: Record<TabKey, string> = {
   portfolio: 'Portfolio',
   watchlist: 'Watchlist',
   activity: 'Activity',
-  audit: 'Audit',
+  audit: 'Reports',
 };
 
 const Shell = () => {

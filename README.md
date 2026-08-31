@@ -47,7 +47,7 @@ just do not survive a reload. Reset is guarded by a typed `RESET` confirmation.
 
 ---
 
-# AI Alpha Portfolio (`ai-portfolio-app/`)
+# Portfolio (`ai-portfolio-app/`)
 
 An unrelated second project in this repository: a mobile trading-terminal app showing a
 portfolio of AI, big-tech and fintech names funded with a single $100,000 deposit in
@@ -85,7 +85,7 @@ marks and say so in the status strip.
 
 Safari enforces CORS and the Yahoo endpoint sends no CORS header, so quotes go through a
 relay. Three public fallbacks are tried in order and the working one is remembered.
-Point **Audit → Data source** at your own relay to keep the requests under your control;
+Point **Reports → Data source** at your own relay to keep the requests under your control;
 it accepts a `{url}` placeholder. Anything the relays cannot answer for keeps its
 snapshot mark and is counted in the status strip — a stale price is never shown as a
 live one.

@@ -35,7 +35,7 @@ export const INITIAL_CAPITAL = 100_000;
 
 export const ACCOUNT = {
   id: '7734829',
-  title: 'AI Alpha — Margin',
+  title: 'Portfolio',
   baseCurrency: 'USD',
   strategy: 'AI value chain, big tech and fintech',
 };

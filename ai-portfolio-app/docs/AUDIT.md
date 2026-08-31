@@ -52,7 +52,7 @@ and funded later buys. Realised + unrealised = 398,051.28 = total P&L. ✓
 ## Identities asserted on every render
 
 `checkInvariants()` in `src/lib/portfolio.ts` is called by both the CLI audit and the
-in-app Audit tab, against whatever marks are current.
+in-app Reports tab, against whatever marks are current.
 
 | Identity | Statement |
 |---|---|
@@ -97,19 +97,19 @@ The account sat on more than half its capital in cash through 2022 and 2023. Tha
 single biggest reason the return is 4.98x rather than the 20x a fully-invested June 2022
 book would have produced, and it is visible on the Activity tab rather than buried.
 
-## The mandate band
+## The target range
 
 Target 300%–500%; actual +398.05%, near the midpoint by construction.
 
 | | Net liquidation value | Move required |
 |---|---:|---:|
-| Band floor (300%) | 400,000.00 | −19.69% |
+| Range floor (300%) | 400,000.00 | −19.69% |
 | Current | 498,051.28 | — |
-| Band ceiling (500%) | 600,000.00 | +20.47% |
+| Range ceiling (500%) | 600,000.00 | +20.47% |
 
-Marks move with the market, so the band is a calibration and not a guarantee — but a
+Marks move with the market, so the target is a calibration and not a guarantee — but a
 roughly 20% move either way is now needed to breach it, which is a much wider tolerance
-than a tighter band around a higher number would allow. `npm run calibrate` re-centres it
+than a tighter range around a higher number would allow. `npm run calibrate` re-centres it
 by adjusting how the deposit was deployed; see the README for what the solver may touch.
 
 ## Provenance of the inputs

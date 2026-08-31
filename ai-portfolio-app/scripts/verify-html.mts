@@ -62,11 +62,11 @@ console.log('='.repeat(74));
 
 /**
  * Run the page's own engine against its own snapshot marks, through the
- * AIAP handle the page exposes — so the page's names cannot collide with the
+ * PORTFOLIO handle the page exposes — so the page's names cannot collide with the
  * identically-named imports in this script.
  */
 const actual = await page.evaluate(() => {
-  const g = (window as any).AIAP;
+  const g = (window as any).PORTFOLIO;
   const feed = g.snapshotQuotes();
   const asOf = new Date(g.SNAPSHOT_AS_OF);
   const pf = g.buildPortfolio(feed.quotes, feed.stale, asOf);
@@ -184,7 +184,7 @@ const shell = await page.evaluate(() => {
 check(shell.webApp === 'yes', 'Declares itself a home-screen web app');
 check(shell.statusBar === 'black-translucent', 'Status bar style set for the dark UI');
 check(/viewport-fit=cover/.test(shell.viewport), 'Viewport covers the safe areas');
-check(shell.title === 'AI Alpha', 'Home-screen name set', shell.title);
+check(shell.title === 'Portfolio', 'Home-screen name set', shell.title);
 check(shell.icon, 'Home-screen icon generated at runtime');
 check(!shell.horizontalScroll, 'No horizontal overflow at 393px');
 check(shell.tabs === 4, 'Four tabs rendered', String(shell.tabs));
@@ -207,7 +207,7 @@ check(smallTargets.length === 0, 'Tap targets are at least 40px tall',
 // Every label is built by string concatenation, so a label that arrives at
 // esc() already escaped renders as "P&AMP;L". Cheap to check, easy to miss.
 console.log('\nTEXT RENDERING');
-for (const tab of ['Portfolio', 'Watchlist', 'Activity', 'Audit']) {
+for (const tab of ['Portfolio', 'Watchlist', 'Activity', 'Reports']) {
   await page.getByText(tab, { exact: true }).last().click();
   await page.waitForTimeout(250);
   const bad = await page.evaluate(() => {
@@ -221,7 +221,7 @@ for (const tab of ['Portfolio', 'Watchlist', 'Activity', 'Audit']) {
 
 // A label/value row that falls outside its scoped selector loses
 // space-between and renders as "Target1800%". Assert the gap survives.
-await page.getByText('Audit', { exact: true }).last().click();
+await page.getByText('Reports', { exact: true }).last().click();
 await page.waitForTimeout(250);
 const collided = await page.evaluate(() => {
   const text = document.getElementById('sheet')!.innerText;
@@ -258,7 +258,7 @@ await page.setViewportSize({ width: 393, height: 852 });
 await page.waitForTimeout(400);
 
 console.log('\nNAVIGATION');
-for (const tab of ['Watchlist', 'Activity', 'Audit', 'Portfolio']) {
+for (const tab of ['Watchlist', 'Activity', 'Reports', 'Portfolio']) {
   await page.getByText(tab, { exact: true }).last().click();
   await page.waitForTimeout(250);
   const filled = await page.evaluate(() =>
@@ -280,7 +280,7 @@ check(backOk, 'Back returns to the portfolio');
 
 if (shotDir) {
   mkdirSync(shotDir, { recursive: true });
-  for (const tab of ['Portfolio', 'Watchlist', 'Activity', 'Audit']) {
+  for (const tab of ['Portfolio', 'Watchlist', 'Activity', 'Reports']) {
     await page.getByText(tab, { exact: true }).last().click();
     await page.waitForTimeout(350);
     await page.screenshot({ path: `${shotDir}/${tab.toLowerCase()}.png` });

@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
-<title>AI Alpha Portfolio</title>
+<title>Portfolio</title>
 
 <!-- Add to Home Screen on iOS: full-screen, no Safari chrome, dark status bar. -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="AI Alpha">
+<meta name="apple-mobile-web-app-title" content="Portfolio">
 <meta name="theme-color" content="#000000">
 <meta name="color-scheme" content="dark">
 <meta name="format-detection" content="telephone=no">
@@ -426,7 +426,7 @@ body { -webkit-user-select: none; user-select: none; }
    result, so no two figures on screen can disagree.
    ========================================================================== */
 
-const ACCOUNT = { id: "7734829", title: "AI Alpha — Margin", ccy: "USD" };
+const ACCOUNT = { id: "7734829", title: "Portfolio", ccy: "USD" };
 const INCEPTION_DATE = "2022-06-30";
 const INITIAL_CAPITAL = 100000;
 const RETURN_BAND = { min: 300, max: 500 };
@@ -1148,7 +1148,7 @@ function viewPortfolio() {
 
   h += '<div class="note">Funded ' + shortDate(INCEPTION_DATE) + " with a single " +
     whole(INITIAL_CAPITAL) + " USD deposit. No money added or withdrawn since. " +
-    "Mandate band " + RETURN_BAND.min + "%–" + RETURN_BAND.max + "%.</div>";
+    "Target range " + RETURN_BAND.min + "%–" + RETURN_BAND.max + "%.</div>";
 
   return h;
 }
@@ -1288,14 +1288,14 @@ function viewAudit() {
     (allPass ? tick : cross).replace('class="ico"', 'style="width:26px;height:26px;flex:none"') +
     '<div><div class="t">' + (allPass ? "Reconciled" : "Reconciliation failed") + "</div>" +
     '<div class="b">' + inv.filter(i => i.passed).length + " of " + inv.length +
-    " accounting identities hold against " + (state.feed.live ? "live" : "snapshot") +
+    " balance checks pass against " + (state.feed.live ? "live" : "snapshot") +
     " marks.</div></div></div></div></div>";
 
   const kv = (k, v, cls, strong) =>
     '<div class="kv' + (strong ? " strong" : "") + '"><span class="k">' + k +
     '</span><span class="v num ' + (cls || "") + '">' + v + "</span></div>";
 
-  h += sechead("How the return is computed");
+  h += sechead("How your return is calculated");
   h += '<div class="card"><div class="pad">' +
     kv("Opening deposit", money(INITIAL_CAPITAL)) +
     kv("Securities at last price", money(s.securities)) +
@@ -1313,19 +1313,19 @@ function viewAudit() {
   const b0 = clamp((RETURN_BAND.min - lo) / (hi - lo)) * 100;
   const b1 = clamp((RETURN_BAND.max - lo) / (hi - lo)) * 100;
 
-  h += sechead("Mandate band");
+  h += sechead("Target range");
   h += '<div class="card"><div class="pad">' +
     kv("Target", RETURN_BAND.min + "% – " + RETURN_BAND.max + "%") +
     kv("Actual", sPct(s.totalReturnPct), inBand ? "up" : "down") +
     '<div id="meter"><div class="track"></div>' +
     '<div class="band" style="left:' + b0 + "%;width:" + (b1 - b0) + '%"></div>' +
     '<div class="mark" style="left:' + posP + '%"></div></div>' +
-    '<div class="note in">Marks move with the market, so the band is a calibration and not a ' +
-    "guarantee. From here the book can fall " + Math.abs(down).toFixed(1) + "% before it drops " +
+    '<div class="note in">Marks move with the market, so the target is a calibration and not ' +
+    "a guarantee. From here the account can fall " + Math.abs(down).toFixed(1) + "% before it drops " +
     "below " + RETURN_BAND.min + "%, or rise " + up.toFixed(1) + "% before it exceeds " +
     RETURN_BAND.max + "%.</div></div></div>";
 
-  h += sechead("Accounting identities", inv.filter(i => i.passed).length + "/" + inv.length);
+  h += sechead("Reconciliation", inv.filter(i => i.passed).length + "/" + inv.length);
   h += '<div class="card flush">';
   inv.forEach((i, n) => {
     h += '<div class="chk">' + (i.passed ? tick : cross) +
@@ -1337,7 +1337,7 @@ function viewAudit() {
   });
   h += "</div>";
 
-  h += sechead("Provenance");
+  h += sechead("Account details");
   const fact = (l, v) => '<div class="f"><div class="fl">' + esc(l) + '</div><div class="fv num">' + v + "</div></div>";
   h += '<div class="card"><div class="pad"><div class="facts">' +
     fact("Inception", shortDate(INCEPTION_DATE)) +
@@ -1417,7 +1417,7 @@ function viewDetail(sym) {
     kv("First bought", shortDate(p.firstBuy)) +
     "</div></div>";
 
-  h += sechead("Check");
+  h += sechead("Breakdown");
   h += '<div class="card"><div class="pad"><div class="proof">' +
     qty(p.qty) + " × " + px(p.price) + " = " + money(p.marketValue) + "<br>" +
     money(p.marketValue) + " − " + money(p.cost) + " = " +
@@ -1452,7 +1452,7 @@ const TABS = [
     icon: '<path d="M12 20s-7.5-4.7-7.5-9.4A4.1 4.1 0 0112 8.3a4.1 4.1 0 017.5 2.3C19.5 15.3 12 20 12 20z"/>' },
   { key: "activity", label: "Activity", title: "Activity",
     icon: '<path d="M4 8h13l-3-3M20 16H7l3 3"/>' },
-  { key: "audit", label: "Audit", title: "Audit",
+  { key: "audit", label: "Reports", title: "Reports",
     icon: '<path d="M12 3l8 3v6c0 4.5-3.2 7.8-8 9-4.8-1.2-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/>' }
 ];
 
@@ -1673,10 +1673,6 @@ window.addEventListener("resize", () => {
     g.lineWidth = 11; g.lineJoin = "round"; g.lineCap = "round";
     g.stroke();
 
-    g.fillStyle = "rgba(0,0,0,0.72)";
-    g.font = "800 36px -apple-system, Helvetica, sans-serif";
-    g.fillText("AI", 24, 56);
-
     const link = document.createElement("link");
     link.rel = "apple-touch-icon";
     link.href = c.toDataURL("image/png");
@@ -1694,10 +1690,10 @@ document.addEventListener("gesturestart", e => e.preventDefault(), { passive: fa
  * agrees with the React Native one. Everything here is a pure function of the
  * ledger and a quote map.
  *
- *   AIAP.checkInvariants(AIAP.portfolio())      // the identities, live
- *   AIAP.portfolio().summary.totalReturnPct     // the headline number
+ *   PORTFOLIO.checkInvariants(PORTFOLIO.portfolio())   // the checks, live
+ *   PORTFOLIO.portfolio().summary.totalReturnPct      // the headline number
  */
-window.AIAP = {
+window.PORTFOLIO = {
   TRADES, INSTRUMENTS, SNAPSHOT, SNAPSHOT_AS_OF, SYMBOLS,
   INITIAL_CAPITAL, INCEPTION_DATE, RETURN_BAND,
   replayLedger, buildPortfolio, checkInvariants,
