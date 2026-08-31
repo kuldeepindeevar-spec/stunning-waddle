@@ -18,25 +18,28 @@
 /* ---------------------------------------------------------------- tokens */
 :root {
   --bg: #000000;
-  --surface: #0e0f11;
-  --raised: #16181c;
-  --pressed: #1e2126;
-  --divider: #22252b;
-  --divider-strong: #2e3238;
+  --card: #1a1a1c;
+  --card-2: #242528;
+  --chip: #1f2023;
+  --chip-on: #3a2410;
+  --divider: #26272b;
 
-  --text: #f2f4f7;
-  --text-2: #9aa2ad;
-  --text-3: #6b727d;
+  --text: #ffffff;
+  --text-2: #9ba0a8;
+  --text-3: #6d727a;
 
-  --accent: #d81222;
-  --info: #3d8bfd;
-  --gain: #00c26e;
-  --loss: #ff4d4f;
+  --brand: #ff7a00;
+  --brand-soft: rgba(255, 122, 0, 0.14);
+  --blue: #2b7fff;
 
-  --grid: #1b1e23;
+  --up: #00c46a;
+  --down: #f4485c;
+  --up-fill: #00b761;
+  --down-fill: #e5384c;
 
-  --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
-  --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+  --grid: #1e1f23;
+
+  --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
 
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -45,10 +48,8 @@
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
 html, body {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  overflow: hidden;                 /* the scroller below owns scrolling */
+  margin: 0; padding: 0; height: 100%;
+  overflow: hidden;
   background: var(--bg);
   color: var(--text);
   font-family: var(--sans);
@@ -56,300 +57,324 @@ html, body {
   -webkit-font-smoothing: antialiased;
   -webkit-text-size-adjust: 100%;
 }
-
-/* Chrome is not selectable; figures are, so a number can be copied out. */
 body { -webkit-user-select: none; user-select: none; }
-.sel, .figure, td, .stat-v { -webkit-user-select: text; user-select: text; }
+.sel, .num { -webkit-user-select: text; user-select: text; }
+
+/* Tabular figures without a monospace face — columns line up as prices tick
+   while the type still reads like the rest of the interface. */
+.num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
 
 #app { display: flex; flex-direction: column; height: 100%; }
 
 /* ------------------------------------------------------------- top chrome */
 #topbar {
-  padding: calc(var(--safe-top) + 8px) 16px 8px;
-  display: flex; align-items: center; justify-content: space-between;
-  background: var(--bg);
   flex: none;
+  padding: calc(var(--safe-top) + 6px) 16px 10px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
 }
-#acct { min-width: 0; }
-#acct .id { font-size: 15px; font-weight: 700; letter-spacing: -0.2px; }
-#acct .id::after { content: " \25BE"; color: var(--text-2); font-size: 10px; }
-#acct .sub {
-  font-size: 10px; color: var(--text-3); letter-spacing: 0.6px;
-  margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+.brand { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.mark {
+  width: 26px; height: 26px; flex: none; border-radius: 7px;
+  background: linear-gradient(150deg, #ff9a2e, var(--brand));
+  position: relative;
 }
-#topicons { display: flex; gap: 16px; color: var(--text-2); flex: none; }
-#topicons svg { width: 19px; height: 19px; display: block; }
+/* A rising notch inside the tile — a mark of its own, not a borrowed one. */
+.mark::after {
+  content: ""; position: absolute; inset: 0;
+  background:
+    linear-gradient(45deg, transparent 46%, rgba(0,0,0,0.55) 46%, rgba(0,0,0,0.55) 54%, transparent 54%);
+  border-radius: 7px;
+}
+#screenTitle { font-size: 22px; font-weight: 700; letter-spacing: -0.4px; }
+.tools { display: flex; align-items: center; gap: 14px; color: var(--text-2); flex: none; }
+.tools svg { width: 21px; height: 21px; display: block; }
+.tools .on { color: var(--brand); }
+
+#searchWrap { flex: none; padding: 0 16px 8px; }
+#searchWrap[hidden] { display: none; }
+#searchInput {
+  width: 100%; background: var(--chip); border: none; border-radius: 10px;
+  color: var(--text); font-family: var(--sans); font-size: 14px;
+  padding: 11px 12px; outline: none; -webkit-appearance: none;
+}
+#searchInput::placeholder { color: var(--text-3); }
 
 #strip {
-  display: flex; align-items: center; gap: 8px;
-  padding: 6px 16px;
-  background: var(--surface);
-  border-top: 0.5px solid var(--divider);
-  border-bottom: 0.5px solid var(--divider);
   flex: none;
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 16px;
+  background: var(--card);
+  margin: 0 16px 4px; border-radius: 10px;
 }
 .pill {
-  font-size: 10px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase;
-  border: 0.5px solid currentColor; border-radius: 3px; padding: 2px 5px;
+  font-size: 10px; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase;
+  border-radius: 4px; padding: 3px 6px;
 }
-.pill.live { color: var(--gain); }
-.pill.snap { color: var(--accent); }
-#strip .msg { font-size: 10px; color: var(--text-2); flex: 1; min-width: 0;
+.pill.live { color: var(--up); background: rgba(0, 196, 106, 0.14); }
+.pill.snap { color: var(--brand); background: var(--brand-soft); }
+#stripMsg { font-size: 11px; color: var(--text-2); flex: 1; min-width: 0;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-#strip .clock { font-family: var(--mono); font-size: 10px; color: var(--text-3); }
+#stripClock { font-size: 11px; color: var(--text-3); }
+#stripIcon { width: 14px; height: 14px; color: var(--text-3); }
 
 /* --------------------------------------------------------------- scroller */
 #scroller {
   flex: 1; min-height: 0;
   overflow-y: auto; overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
-  overscroll-behavior-y: contain;    /* no rubber-band into Safari's UI */
+  overscroll-behavior-y: contain;
 }
 #pull {
   height: 0; overflow: hidden;
   display: flex; align-items: center; justify-content: center;
-  color: var(--text-3); font-size: 10px; letter-spacing: 0.6px; text-transform: uppercase;
+  color: var(--text-3); font-size: 11px;
   transition: height 0.18s ease;
 }
-#pull.armed { color: var(--info); }
-#sheet { padding-bottom: 28px; }
+#pull.armed { color: var(--brand); }
+#sheet { padding: 0 0 28px; }
 
 /* ------------------------------------------------------------------ atoms */
+.card {
+  background: var(--card);
+  border-radius: 14px;
+  margin: 0 16px 12px;
+  overflow: hidden;
+}
+.card.flush { padding: 0; }
+.pad { padding: 14px 16px; }
 .hr { height: 0.5px; background: var(--divider); }
 .hr.inset { margin-left: 16px; }
 
-.section {
+.sechead {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 24px 16px 8px;
+  padding: 18px 16px 10px;
 }
-.section h2 {
-  margin: 0; font-size: 11px; font-weight: 700; letter-spacing: 1.1px;
-  text-transform: uppercase; color: var(--text-3);
-}
-.section .aside { font-family: var(--mono); font-size: 10px; color: var(--text-3); }
+.sechead h2 { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -0.2px; }
+.sechead .aside { font-size: 12px; color: var(--text-2); }
 
-.mono { font-family: var(--mono); }
-.up { color: var(--gain); }
-.down { color: var(--loss); }
+.lbl { font-size: 12px; color: var(--text-2); }
+/* Inline-block so the rule hugs the words, not the width of its cell. */
+.dotted { display: inline-block; border-bottom: 1px dotted var(--text-3); padding-bottom: 1px; }
+.up { color: var(--up); }
+.down { color: var(--down); }
 .flat { color: var(--text-2); }
 
-/* ------------------------------------------------------------------- hero */
-#hero { padding: 16px 16px 8px; }
-#hero .label {
-  font-size: 10px; font-weight: 700; letter-spacing: 0.4px;
-  text-transform: uppercase; color: var(--text-3);
+/* A solid-filled change chip, the loudest element in the list. */
+.chip-pct {
+  display: inline-block; min-width: 78px; text-align: center;
+  padding: 5px 8px; border-radius: 5px;
+  font-size: 14px; font-weight: 700; color: #fff;
+  font-variant-numeric: tabular-nums;
 }
-#hero .nlv {
-  font-family: var(--mono); font-size: 38px; font-weight: 300;
-  letter-spacing: -1px; margin-top: 2px; line-height: 1.1;
-}
-#hero .day { margin-top: 4px; display: flex; gap: 8px; align-items: baseline; }
-#hero .day span { font-family: var(--mono); font-size: 14px; font-weight: 600; }
-#hero .day .cap { font-family: var(--sans); font-size: 11px; color: var(--text-3); font-weight: 400; }
+.chip-pct.up { background: var(--up-fill); color: #fff; }
+.chip-pct.down { background: var(--down-fill); color: #fff; }
+.chip-pct.flat { background: var(--card-2); color: var(--text-2); }
 
-#banner {
-  margin: 12px 16px 0; padding: 12px;
-  background: var(--raised); border-radius: 4px;
-  border-left: 2px solid var(--gain);
-  display: flex; align-items: center; gap: 12px;
+/* Filter chips */
+.chiprow {
+  display: flex; gap: 8px; padding: 2px 16px 14px;
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
 }
-#banner .main { flex: 1; min-width: 0; }
-#banner .cap {
-  font-size: 10px; font-weight: 700; letter-spacing: 0.4px;
-  text-transform: uppercase; color: var(--text-3);
+.chiprow::-webkit-scrollbar { display: none; }
+.chiprow .c {
+  flex: none; padding: 9px 16px; border-radius: 9px;
+  background: var(--chip); color: var(--text-2);
+  font-size: 13px; font-weight: 600; white-space: nowrap;
 }
-#banner .ret {
-  font-family: var(--mono); font-size: 26px; font-weight: 700;
-  color: var(--gain); margin-top: 2px;
+.chiprow .c.on { background: var(--chip-on); color: var(--brand); }
+
+/* ------------------------------------------------------- account summary */
+#allacct {
+  display: flex; align-items: center; gap: 6px;
+  padding: 2px 16px 12px; color: var(--text);
 }
-#banner .side { text-align: right; flex: none; }
-#banner .mult { font-family: var(--mono); font-size: 20px; font-weight: 600; }
-#banner .cagr { font-size: 10px; color: var(--text-3); margin-top: 3px; }
+#allacct .t { font-size: 17px; font-weight: 700; }
+#allacct .caret { color: var(--text-2); font-size: 11px; }
+#allacct .grow { flex: 1; }
+
+.acct-top { display: flex; align-items: center; gap: 10px; }
+.acct-top .dot {
+  width: 20px; height: 20px; border-radius: 5px; flex: none;
+  background: var(--blue);
+}
+.acct-top .nm { font-size: 16px; font-weight: 700; flex: 1; min-width: 0; }
+.acct-top .chev { color: var(--text-3); font-size: 16px; }
+
+.split { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+.split .r { text-align: right; }
+.big { font-size: 30px; font-weight: 600; letter-spacing: -0.8px; line-height: 1.15; }
+.mid { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+.sub { font-size: 13px; font-weight: 600; }
+
+.trio { display: flex; gap: 12px; }
+.trio .t { flex: 1; min-width: 0; }
+.trio .t:nth-child(2) { text-align: center; }
+.trio .t:nth-child(3) { text-align: right; }
+.trio .tv { font-size: 15px; font-weight: 600; margin-top: 5px; }
 
 /* ------------------------------------------------------------------ chart */
-#chartwrap { position: relative; margin-top: 8px; }
+#chartwrap { position: relative; }
 #chartwrap svg { display: block; width: 100%; }
-#chartwrap .badge {
-  position: absolute; top: 0; left: 4px;
-  font-size: 8px; font-weight: 700; letter-spacing: 0.4px;
-  color: var(--text-3); text-transform: uppercase;
+#chartwrap .ax { position: absolute; font-size: 10px; color: var(--text-3);
+  font-variant-numeric: tabular-nums; }
+/* Sits inside an already-padded card, so it carries no horizontal padding. */
+.chartcap {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+  padding: 6px 0 2px;
 }
-#chartwrap .ax {
-  position: absolute; font-family: var(--mono); font-size: 9px; color: var(--text-3);
-}
-.chartfoot {
-  padding: 4px 16px 0; font-family: var(--mono); font-size: 9px; color: var(--text-3);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-
-/* -------------------------------------------------------------- stat grid */
-.grid { display: flex; padding: 8px 16px; gap: 16px; }
-.grid .cell { flex: 1; min-width: 0; }
-.grid .cell.r { text-align: right; }
-.stat-l {
-  font-size: 10px; font-weight: 700; letter-spacing: 0.4px;
-  text-transform: uppercase; color: var(--text-3); margin-bottom: 3px;
-}
-.stat-v { font-family: var(--mono); font-size: 14px; font-weight: 600; }
-.note { padding: 8px 16px 0; font-size: 10px; line-height: 15px; color: var(--text-3); }
-
-/* ------------------------------------------------------------- allocation */
-#allocbar { display: flex; height: 10px; border-radius: 2px; overflow: hidden; gap: 1px; margin: 8px 16px 0; }
-#alloclegend {
-  display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 16px 0;
-}
-#alloclegend .li { display: flex; align-items: center; gap: 4px; width: calc(33.333% - 6px); }
-#alloclegend .sw { width: 7px; height: 7px; border-radius: 1px; flex: none; }
-#alloclegend .sy { font-size: 10px; font-weight: 700; letter-spacing: 0.4px; color: var(--text-2); flex: 1; }
-#alloclegend .wt { font-family: var(--mono); font-size: 10px; color: var(--text-3); }
-
-.theme-row { display: flex; align-items: center; padding: 8px 16px; gap: 8px; }
-.theme-row .n { flex: 1; font-size: 12px; color: var(--text-2); }
-.theme-row .w { font-family: var(--mono); font-size: 12px; width: 56px; text-align: right; }
-.theme-row .v { font-family: var(--mono); font-size: 12px; color: var(--text-2); width: 96px; text-align: right; }
+.chartcap .k { font-size: 11px; color: var(--text-3); }
 
 /* ---------------------------------------------------------------- blotter */
-.cols { display: flex; padding: 0 16px 4px; }
-.cols span {
-  font-size: 10px; font-weight: 700; letter-spacing: 0.4px;
-  text-transform: uppercase; color: var(--text-3);
+.cols { display: flex; align-items: center; padding: 10px 16px; gap: 8px; }
+.cols .h {
+  font-size: 12px; color: var(--text-2); display: flex; align-items: center; gap: 3px;
 }
-.row { display: flex; align-items: center; padding: 9px 16px; gap: 8px; }
-.row:active { background: var(--pressed); }
-.row .idc { flex: 3.1; min-width: 0; }
-.row .qc { flex: 1.9; text-align: right; }
-.row .vc { flex: 2.8; text-align: right; }
-.row .sym { font-size: 15px; font-weight: 700; letter-spacing: -0.2px; }
-.row .nm {
-  font-size: 11px; color: var(--text-2); margin-top: 1px;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.row .qty { font-family: var(--mono); font-size: 10px; color: var(--text-3); margin-top: 2px; }
-.row .last { font-family: var(--mono); font-size: 14px; font-weight: 600; }
-.row .dpct { font-family: var(--mono); font-size: 11px; margin-top: 3px; }
-.row .mv { font-family: var(--mono); font-size: 14px; font-weight: 600; }
-.row .pnl { font-family: var(--mono); font-size: 11px; margin-top: 3px; }
-.row .pnlp { font-family: var(--mono); font-size: 10px; margin-top: 1px; }
+.cols .h.on { color: var(--brand); }
+.cols .h .cr { font-size: 9px; line-height: 1; opacity: 0.85; }
+.cols .c1 { flex: 2.6; }
+.cols .c2 { flex: 2.1; justify-content: flex-end; }
+.cols .c3 { flex: 2.0; justify-content: flex-end; }
+.cols .c4 { flex: 2.1; justify-content: flex-end; }
 
-.cashrow { display: flex; justify-content: space-between; padding: 12px 16px; }
-.cashrow .l { font-size: 13px; color: var(--text-2); }
-.cashrow .v { font-family: var(--mono); font-size: 13px; }
-.totalrow {
-  display: flex; justify-content: space-between; padding: 12px 16px;
-  background: var(--surface);
+.hrow { display: flex; align-items: center; padding: 13px 16px; gap: 8px; }
+.hrow:active { background: var(--card-2); }
+.hrow .c1 { flex: 2.6; min-width: 0; }
+.hrow .c2 { flex: 2.1; text-align: right; }
+.hrow .c3 { flex: 2.0; text-align: right; }
+.hrow .c4 { flex: 2.1; text-align: right; }
+.hrow .n1 { font-size: 15px; font-weight: 600; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; }
+.hrow .n2 { font-size: 12px; color: var(--text-3); margin-top: 3px; }
+.hrow .v1 { font-size: 15px; font-weight: 600; }
+.hrow .v2 { font-size: 12px; color: var(--text-3); margin-top: 3px; }
+
+.cashline { display: flex; justify-content: space-between; padding: 13px 16px; }
+.cashline .l { font-size: 14px; color: var(--text-2); }
+.cashline .v { font-size: 14px; font-weight: 600; }
+
+/* -------------------------------------------------------------- watchlist */
+.wtool { display: flex; align-items: center; gap: 16px; padding: 12px 16px 10px; }
+.wtool svg { width: 18px; height: 18px; color: var(--text-2); display: block; }
+.wtool .grow { flex: 1; }
+.wtool .s { font-size: 12px; color: var(--text-2); display: flex; align-items: center; gap: 3px; }
+.wtool .s.on { color: var(--brand); }
+
+.wrow { display: flex; align-items: center; padding: 12px 16px; gap: 10px; }
+.wrow:active { background: var(--card-2); }
+.wrow .id { flex: 1.9; min-width: 0; }
+.wrow .spark { flex: none; width: 62px; height: 30px; }
+.wrow .px { flex: 1.1; text-align: right; }
+.wrow .pc { flex: none; }
+.wrow .n1 { font-size: 15px; font-weight: 600; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; }
+.wrow .n2 { font-size: 12px; color: var(--text-3); margin-top: 3px; }
+.wrow .v1 { font-size: 15px; font-weight: 600; }
+.wrow .v2 { font-size: 12px; color: var(--text-3); margin-top: 3px; }
+
+#ticker {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 16px; margin: 4px 16px 0;
+  background: rgba(0, 196, 106, 0.10); border-radius: 10px;
 }
-.totalrow .l { font-size: 14px; font-weight: 700; }
-.totalrow .v { font-family: var(--mono); font-size: 15px; font-weight: 700; }
+#ticker.neg { background: rgba(244, 72, 92, 0.10); }
+#ticker .k { font-size: 13px; color: var(--text-2); flex: 1; }
+#ticker .v { font-size: 13px; font-weight: 700; }
 
 /* --------------------------------------------------------------- activity */
-.act { display: flex; padding: 10px 16px; gap: 12px; }
+.act { display: flex; padding: 13px 16px; gap: 12px; }
 .act .l { flex: 1; min-width: 0; }
 .act .top { display: flex; align-items: center; gap: 8px; }
-.act .side { font-size: 10px; font-weight: 700; letter-spacing: 0.4px; }
-.act .sym { font-size: 14px; font-weight: 700; }
-.act .dt { font-size: 10px; color: var(--text-3); }
-.act .det { font-family: var(--mono); font-size: 11px; color: var(--text-2); margin-top: 3px; }
-.act .why { font-size: 10px; color: var(--text-3); margin-top: 3px; line-height: 14px; }
-.act .r { text-align: right; flex: none; }
-.act .gross { font-family: var(--mono); font-size: 13px; font-weight: 600; }
-.act .cl { font-size: 8px; font-weight: 700; letter-spacing: 0.4px;
-  text-transform: uppercase; color: var(--text-3); margin-top: 5px; }
-.act .ca { font-family: var(--mono); font-size: 11px; color: var(--text-2); margin-top: 1px; }
-
-.box {
-  margin: 0 16px 12px; padding: 12px;
-  background: var(--raised); border-radius: 4px;
-  font-size: 11px; line-height: 17px; color: var(--text-2);
+.act .tag {
+  font-size: 11px; font-weight: 800; letter-spacing: 0.3px;
+  padding: 2px 6px; border-radius: 4px;
 }
+.act .tag.buy { color: var(--up); background: rgba(0, 196, 106, 0.14); }
+.act .tag.sell { color: var(--down); background: rgba(244, 72, 92, 0.14); }
+.act .tag.dep { color: var(--blue); background: rgba(43, 127, 255, 0.14); }
+.act .sym { font-size: 15px; font-weight: 700; }
+.act .dt { font-size: 11px; color: var(--text-3); }
+.act .det { font-size: 13px; color: var(--text-2); margin-top: 4px; }
+.act .why { font-size: 11px; color: var(--text-3); margin-top: 4px; line-height: 15px; }
+.act .r { text-align: right; flex: none; }
+.act .g { font-size: 15px; font-weight: 600; }
+.act .ca { font-size: 11px; color: var(--text-3); margin-top: 4px; }
 
 /* ------------------------------------------------------------------ audit */
-#verdict {
-  margin: 16px 16px 0; padding: 12px;
-  background: var(--raised); border-radius: 4px;
-  border-left: 2px solid var(--gain);
-  display: flex; gap: 12px; align-items: center;
-}
-#verdict .t { font-size: 16px; font-weight: 700; }
-#verdict .b { font-size: 11px; color: var(--text-2); margin-top: 2px; line-height: 16px; }
+.verdict { display: flex; gap: 12px; align-items: center; }
+.verdict .t { font-size: 17px; font-weight: 700; }
+.verdict .b { font-size: 12px; color: var(--text-2); margin-top: 3px; line-height: 17px; }
 
-.deriv { padding: 8px 16px; }
-.deriv .dr { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; gap: 12px; }
-.deriv .dl { font-size: 12px; color: var(--text-2); }
-.deriv .dv { font-family: var(--mono); font-size: 12px; }
-.deriv .strong .dl { color: var(--text); font-weight: 700; }
-.deriv .strong .dv { font-size: 14px; font-weight: 700; }
+.kv { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; gap: 12px; }
+.kv .k { font-size: 13px; color: var(--text-2); }
+.kv .v { font-size: 14px; font-weight: 600; }
+.kv.strong .k { color: var(--text); font-weight: 700; }
+.kv.strong .v { font-size: 16px; font-weight: 700; }
 
-#meter { height: 22px; display: flex; align-items: center; position: relative; margin-top: 12px; }
-#meter .track { height: 3px; background: var(--divider); border-radius: 2px; width: 100%; }
-#meter .band { position: absolute; height: 3px; background: var(--gain); opacity: 0.55; border-radius: 2px; }
-#meter .mark { position: absolute; width: 2px; height: 16px; background: var(--text); margin-left: -1px; }
+#meter { height: 26px; display: flex; align-items: center; position: relative; margin-top: 10px; }
+#meter .track { height: 4px; background: var(--card-2); border-radius: 3px; width: 100%; }
+#meter .band { position: absolute; height: 4px; background: var(--up); opacity: 0.5; border-radius: 3px; }
+#meter .mark { position: absolute; width: 3px; height: 18px; background: var(--text);
+  margin-left: -1.5px; border-radius: 2px; }
 
-.chk { display: flex; gap: 8px; padding: 10px 16px; }
-.chk .ico { flex: none; width: 16px; height: 16px; margin-top: 1px; }
-.chk .n { font-size: 13px; }
-.chk .d { font-size: 10px; color: var(--text-2); margin-top: 2px; line-height: 15px; }
-.chk .num { font-family: var(--mono); font-size: 9px; color: var(--text-3); margin-top: 4px; }
+.chk { display: flex; gap: 10px; padding: 12px 16px; }
+.chk .ico { flex: none; width: 18px; height: 18px; margin-top: 1px; }
+.chk .n { font-size: 14px; font-weight: 600; }
+.chk .d { font-size: 12px; color: var(--text-2); margin-top: 3px; line-height: 17px; }
+.chk .x { font-size: 11px; color: var(--text-3); margin-top: 5px;
+  font-variant-numeric: tabular-nums; }
 
-.facts { display: flex; flex-wrap: wrap; padding: 12px 16px 0; }
-.facts .f { width: 50%; padding: 7px 0; }
-.facts .fl { font-size: 10px; font-weight: 700; letter-spacing: 0.4px;
-  text-transform: uppercase; color: var(--text-3); }
-.facts .fv { font-family: var(--mono); font-size: 14px; margin-top: 2px; }
+.facts { display: flex; flex-wrap: wrap; }
+.facts .f { width: 50%; padding: 9px 0; }
+.facts .fl { font-size: 12px; color: var(--text-2); }
+.facts .fv { font-size: 16px; font-weight: 600; margin-top: 3px; }
 
-/* ----------------------------------------------------------------- detail */
-#back { display: flex; align-items: center; gap: 2px; padding: 8px 12px; color: var(--info); font-size: 14px; }
-#back svg { width: 18px; height: 18px; }
-.dhead { padding: 0 16px 12px; }
-.dhead .sym { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
-.dhead .nm { font-size: 13px; color: var(--text-2); margin-top: 2px; }
-.dhead .venue { font-size: 10px; font-weight: 700; letter-spacing: 0.4px;
-  text-transform: uppercase; color: var(--text-3); margin-top: 4px; }
-.dhead .last { font-family: var(--mono); font-size: 30px; font-weight: 600; margin-top: 12px; }
-.dhead .dl { font-family: var(--mono); font-size: 12px; margin-top: 2px; }
-.drow { display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; gap: 12px; }
-.drow .l { font-size: 13px; color: var(--text-2); }
-.drow .v { font-family: var(--mono); font-size: 13px; font-weight: 600; }
-.proof { padding: 12px 16px; font-family: var(--mono); font-size: 11px;
-  color: var(--text-2); line-height: 19px; }
+.note { padding: 12px 16px 0; font-size: 12px; line-height: 18px; color: var(--text-3); }
+.note.in { padding: 10px 0 0; }
 
 /* --------------------------------------------------------------- settings */
-.setrow { padding: 12px 16px; }
-.setrow label { font-size: 10px; font-weight: 700; letter-spacing: 0.4px;
-  text-transform: uppercase; color: var(--text-3); display: block; margin-bottom: 6px; }
+.setrow { padding: 12px 0 0; }
+.setrow label { font-size: 12px; color: var(--text-2); display: block; margin-bottom: 8px; }
 .setrow input {
-  width: 100%; background: var(--raised); border: 0.5px solid var(--divider-strong);
-  border-radius: 4px; color: var(--text); font-family: var(--mono); font-size: 12px;
-  padding: 10px; outline: none; -webkit-appearance: none;
+  width: 100%; background: var(--chip); border: none; border-radius: 10px;
+  color: var(--text); font-family: var(--sans); font-size: 13px;
+  padding: 12px; outline: none; -webkit-appearance: none;
 }
-.setrow input:focus { border-color: var(--info); }
-.btnrow { display: flex; gap: 8px; padding: 0 16px 12px; }
+.btnrow { display: flex; gap: 10px; padding: 12px 0 2px; }
 .btn {
-  flex: 1; text-align: center; padding: 11px; border-radius: 4px;
-  background: var(--raised); border: 0.5px solid var(--divider-strong);
-  font-size: 13px; font-weight: 600; color: var(--text);
+  flex: 1; text-align: center; padding: 13px; border-radius: 10px;
+  background: var(--chip); font-size: 14px; font-weight: 600; color: var(--text);
 }
-.btn:active { background: var(--pressed); }
-.btn.primary { background: var(--info); border-color: var(--info); color: #fff; }
+.btn:active { opacity: 0.7; }
+.btn.primary { background: var(--brand); color: #fff; }
+
+/* ----------------------------------------------------------------- detail */
+#back { display: flex; align-items: center; gap: 4px; padding: 4px 12px 8px;
+  color: var(--text-2); font-size: 15px; }
+#back svg { width: 20px; height: 20px; }
+.dhead .sym { font-size: 24px; font-weight: 700; letter-spacing: -0.4px; }
+.dhead .nm { font-size: 13px; color: var(--text-2); margin-top: 3px; }
+.dhead .venue { font-size: 12px; color: var(--text-3); margin-top: 6px; }
+.dhead .last { font-size: 32px; font-weight: 600; letter-spacing: -0.8px; margin-top: 14px; }
+.dhead .dl { font-size: 14px; font-weight: 600; margin-top: 4px; }
+.proof { font-size: 13px; color: var(--text-2); line-height: 24px;
+  font-variant-numeric: tabular-nums; }
 
 /* ---------------------------------------------------------------- tab bar */
 #tabs {
-  display: flex; flex: none;
-  background: var(--surface);
-  border-top: 0.5px solid var(--divider-strong);
-  padding: 8px 0 calc(var(--safe-bottom) + 8px);
+  flex: none; display: flex;
+  background: #0a0a0b;
+  border-top: 0.5px solid var(--divider);
+  padding: 8px 0 calc(var(--safe-bottom) + 6px);
 }
 #tabs .tab {
   flex: 1; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 3px;
-  min-height: 44px;                  /* Apple's minimum tap target */
-  color: var(--text-3); position: relative;
+  align-items: center; justify-content: center; gap: 4px;
+  min-height: 44px; color: var(--text-3);
 }
-#tabs .tab.on { color: var(--text); }
-#tabs .tab.on::before {
-  content: ""; position: absolute; top: -8px; width: 30px; height: 2px; background: var(--accent);
-}
-#tabs svg { width: 19px; height: 19px; display: block; }
-#tabs .lab { font-size: 9px; font-weight: 700; letter-spacing: 0.4px; }
+#tabs .tab.on { color: var(--brand); }
+#tabs svg { width: 23px; height: 23px; display: block; }
+#tabs .lab { font-size: 10px; font-weight: 600; }
 
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
@@ -357,23 +382,27 @@ body { -webkit-user-select: none; user-select: none; }
 <body>
 <div id="app">
   <div id="topbar">
-    <div id="acct">
-      <div class="id" id="acctId">U7734829</div>
-      <div class="sub" id="acctSub">AI ALPHA — MARGIN</div>
+    <div class="brand"><span class="mark"></span><span id="screenTitle">Portfolio</span></div>
+    <div class="tools">
+      <span id="searchBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6"/>
+        </svg>
+      </span>
     </div>
-    <div id="topicons">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 8a6 6 0 10-12 0c0 7-3 8-3 8h18s-3-1-3-8"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="10" r="3"/><path d="M6.2 18.5a6.5 6.5 0 0111.6 0"/></svg>
-    </div>
+  </div>
+
+  <div id="searchWrap" hidden>
+    <input id="searchInput" type="search" placeholder="Filter by symbol or name"
+           autocapitalize="characters" autocorrect="off" spellcheck="false">
   </div>
 
   <div id="strip">
     <span class="pill snap" id="stripPill">Snapshot</span>
-    <span class="msg" id="stripMsg">Loading…</span>
-    <span class="clock" id="stripClock">--:--:--</span>
-    <svg id="stripIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-         stroke-linecap="round" style="width:13px;height:13px;color:var(--text-3)">
+    <span id="stripMsg">Loading…</span>
+    <span id="stripClock" class="num">--:--:--</span>
+    <svg id="stripIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round">
       <path d="M20 11a8 8 0 10-2.3 5.7"/><path d="M20 5v6h-6"/>
     </svg>
   </div>
@@ -397,7 +426,7 @@ body { -webkit-user-select: none; user-select: none; }
    result, so no two figures on screen can disagree.
    ========================================================================== */
 
-const ACCOUNT = { id: "U7734829", title: "AI ALPHA — MARGIN", ccy: "USD" };
+const ACCOUNT = { id: "7734829", title: "AI Alpha — Margin", ccy: "USD" };
 const INCEPTION_DATE = "2022-06-30";
 const INITIAL_CAPITAL = 100000;
 const RETURN_BAND = { min: 300, max: 500 };
@@ -445,11 +474,11 @@ const TRADES = [
 ];
 
 const INSTRUMENTS = {
-  VRT:  { name:"Vertiv Holdings Co",         ex:"NYSE",   sector:"Data Centre Infrastructure",
+  VRT:  { name:"Vertiv Holdings Co",         ex:"NYSE",   sector:"Data Centre",
           thesis:"Thermal and power for the AI data centre buildout. Added in 2024, once the capex cycle was explicit." },
   PLTR: { name:"Palantir Technologies Inc",  ex:"NASDAQ", sector:"AI Software",
           thesis:"AIP land-and-expand in US commercial. Started in 2024 as pilots converted to seats." },
-  NVDA: { name:"NVIDIA Corp",                ex:"NASDAQ", sector:"Semiconductors",
+  NVDA: { name:"NVIDIA Corp",                ex:"NASDAQ", sector:"Semis",
           thesis:"The accelerated-compute standard. Held since inception, trimmed once into the 2024 run." },
   MU:   { name:"Micron Technology Inc",      ex:"NASDAQ", sector:"Memory",
           thesis:"HBM supply is the binding constraint on accelerator shipments." },
@@ -457,7 +486,7 @@ const INSTRUMENTS = {
           thesis:"Retail brokerage taking share and monetising beyond equities." },
   META: { name:"Meta Platforms Inc",         ex:"NASDAQ", sector:"Big Tech",
           thesis:"Bought in the November 2022 capitulation on the view that AI capex was an asset, not a hole." },
-  AVGO: { name:"Broadcom Inc",               ex:"NASDAQ", sector:"Semiconductors",
+  AVGO: { name:"Broadcom Inc",               ex:"NASDAQ", sector:"Semis",
           thesis:"Custom accelerator (XPU) and AI networking franchise. The largest opening position, added to in 2023." },
   NBIS: { name:"Nebius Group N.V.",          ex:"NASDAQ", sector:"AI Cloud",
           thesis:"Neocloud GPU capacity, bought on the day Nasdaq resumed trading." },
@@ -680,13 +709,8 @@ function monthEnds(now) {
   return out;
 }
 
-/**
- * Modelled curve: each symbol's price path is interpolated in log space
- * between the prices the ledger actually transacted at and today's mark. The
- * endpoints are exact; the shape between them is an approximation, and the
- * chart labels itself as such.
- */
-function buildModelledCurve(quotes, now) {
+/** Per-symbol price anchors: every price the ledger transacted at, plus today. */
+function priceAnchors(quotes, now) {
   const anchors = {};
   for (const t of TRADES) {
     (anchors[t.sym] = anchors[t.sym] || []).push({ t: Date.parse(t.date + "T00:00:00Z"), px: t.px });
@@ -695,30 +719,39 @@ function buildModelledCurve(quotes, now) {
     if (quotes[sym]) anchors[sym].push({ t: now, px: quotes[sym].price });
     anchors[sym].sort((a, b) => a.t - b.t);
   }
+  return anchors;
+}
 
-  const priceAt = (sym, t) => {
-    const list = anchors[sym];
-    if (!list || !list.length) return null;
-    if (t <= list[0].t) return list[0].px;
-    if (t >= list[list.length - 1].t) return list[list.length - 1].px;
-    for (let i = 1; i < list.length; i++) {
-      const a = list[i - 1], b = list[i];
-      if (t <= b.t) {
-        const span = b.t - a.t;
-        const w = span === 0 ? 1 : (t - a.t) / span;
-        return Math.exp(Math.log(a.px) * (1 - w) + Math.log(b.px) * w);
-      }
+/** Log-linear interpolation between a symbol's anchors. */
+function priceAt(anchors, sym, t) {
+  const list = anchors[sym];
+  if (!list || !list.length) return null;
+  if (t <= list[0].t) return list[0].px;
+  if (t >= list[list.length - 1].t) return list[list.length - 1].px;
+  for (let i = 1; i < list.length; i++) {
+    const a = list[i - 1], b = list[i];
+    if (t <= b.t) {
+      const span = b.t - a.t;
+      const w = span === 0 ? 1 : (t - a.t) / span;
+      return Math.exp(Math.log(a.px) * (1 - w) + Math.log(b.px) * w);
     }
-    return list[list.length - 1].px;
-  };
+  }
+  return list[list.length - 1].px;
+}
 
+/**
+ * Modelled curve. The endpoints are exact; the shape between them is an
+ * approximation, and the chart labels itself as such.
+ */
+function buildModelledCurve(quotes, now) {
+  const anchors = priceAnchors(quotes, now);
   const points = [];
   for (const t of monthEnds(now)) {
     const { shares, cash } = holdingsAsOf(t);
     let value = cash;
     for (const sym in shares) {
       if (shares[sym] <= 0) continue;
-      const px = priceAt(sym, t);
+      const px = priceAt(anchors, sym, t);
       if (px != null) value += shares[sym] * px;
     }
     points.push({ t, value });
@@ -867,7 +900,12 @@ const state = {
   lastUpdated: new Date(),
   refreshing: false,
   tab: "portfolio",
-  detail: null
+  detail: null,
+  sector: "All",          // holdings filter chip
+  sort: { key: "mv", dir: -1 },
+  wsort: { key: "chg", dir: -1 },
+  query: "",
+  acctOpen: true
 };
 state.curve = buildModelledCurve(state.feed.quotes, Date.now());
 
@@ -881,18 +919,22 @@ function portfolio() {
 
 const sheet = document.getElementById("sheet");
 
-const hr = (inset) => '<div class="hr' + (inset ? " inset" : "") + '"></div>';
-const section = (title, aside) =>
-  '<div class="section"><h2>' + esc(title) + '</h2>' +
+const hr = inset => '<div class="hr' + (inset ? " inset" : "") + '"></div>';
+const sechead = (title, aside) =>
+  '<div class="sechead"><h2>' + esc(title) + "</h2>" +
   (aside ? '<span class="aside">' + esc(aside) + "</span>" : "") + "</div>";
+
+/** Caret pair for a sortable column header. */
+const caret = (active, dir) =>
+  '<span class="cr">' + (active ? (dir < 0 ? "▼" : "▲") : "⇅") + "</span>";
 
 /* ------------------------------------------------------------------ chart */
 function chartHtml(curve) {
   const pts = curve.points;
   if (pts.length < 2) return "";
 
-  const W = Math.max(document.documentElement.clientWidth, 320);
-  const H = 168, padL = 4, padR = 52, padT = 10, padB = 20;
+  const W = Math.max(document.documentElement.clientWidth - 32, 280);
+  const H = 150, padL = 0, padR = 46, padT = 8, padB = 18;
 
   const xs = pts.map(p => p.t);
   const ys = pts.map(p => Math.log(Math.max(p.value, 1)));
@@ -923,8 +965,8 @@ function chartHtml(curve) {
 
   let svg = '<svg viewBox="0 0 ' + W + " " + H + '" preserveAspectRatio="none" height="' + H + '">' +
     '<defs><linearGradient id="af" x1="0" y1="0" x2="0" y2="1">' +
-    '<stop offset="0" stop-color="rgba(61,139,253,0.28)"/>' +
-    '<stop offset="1" stop-color="rgba(61,139,253,0)"/></linearGradient></defs>';
+    '<stop offset="0" stop-color="rgba(255,122,0,0.30)"/>' +
+    '<stop offset="1" stop-color="rgba(255,122,0,0)"/></linearGradient></defs>';
   for (const v of decades)
     svg += '<line x1="' + padL + '" x2="' + (W - padR) + '" y1="' + sy(v) + '" y2="' + sy(v) +
            '" stroke="var(--grid)" stroke-width="1"/>';
@@ -932,148 +974,252 @@ function chartHtml(curve) {
     svg += '<line x1="' + sx(t) + '" x2="' + sx(t) + '" y1="' + padT + '" y2="' + (padT + plotH) +
            '" stroke="var(--grid)" stroke-width="1"/>';
   svg += '<path d="' + area + '" fill="url(#af)"/>' +
-         '<path d="' + line + '" fill="none" stroke="var(--info)" stroke-width="1.75" ' +
+         '<path d="' + line + '" fill="none" stroke="var(--brand)" stroke-width="2" ' +
          'stroke-linejoin="round" stroke-linecap="round"/>' +
          '<circle cx="' + sx(pts[pts.length - 1].t) + '" cy="' + sy(pts[pts.length - 1].value) +
-         '" r="3" fill="var(--info)"/></svg>';
+         '" r="3.2" fill="var(--brand)"/></svg>';
 
-  let labels = '<div class="badge">Log scale &middot; ' +
-    (curve.basis === "marked" ? "marked monthly" : "indicative path") + "</div>";
+  let labels = "";
   for (const v of decades)
-    labels += '<div class="ax" style="top:' + (sy(v) - 6) + "px;right:8px\">" +
+    labels += '<div class="ax" style="top:' + (sy(v) - 7) + "px;right:6px\">" +
               (v >= 1e6 ? (v / 1e6) + "M" : (v / 1e3) + "K") + "</div>";
   for (const t of years)
-    labels += '<div class="ax" style="left:' + (sx(t) - 16) + 'px;bottom:2px">' + axisDate(t) + "</div>";
+    labels += '<div class="ax" style="left:' + Math.max(0, sx(t) - 16) + 'px;bottom:0">' + axisDate(t) + "</div>";
 
-  const first = pts[0], last = pts[pts.length - 1];
-  return '<div id="chartwrap">' + svg + labels + "</div>" +
-    '<div class="chartfoot">' + whole(first.value) + " &rarr; " + whole(last.value) + " &middot; " +
-    (curve.basis === "marked" ? "month-end closes replayed against the ledger"
-                              : "endpoints exact, path interpolated") + "</div>";
+  return '<div id="chartwrap">' + svg + labels + "</div>";
+}
+
+/** A 62x30 sparkline of one symbol's path since its first purchase. */
+function sparkline(sym, anchors, now, tint) {
+  const list = anchors[sym];
+  if (!list || list.length < 2) return "";
+  const t0 = list[0].t, t1 = now;
+  const N = 24, vals = [];
+  for (let i = 0; i < N; i++) {
+    const t = t0 + ((t1 - t0) * i) / (N - 1);
+    const v = priceAt(anchors, sym, t);
+    if (v == null) return "";
+    vals.push(v);
+  }
+  const lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals);
+  const span = hi - lo || 1;
+  const W = 62, H = 30, pad = 3;
+  const d = vals.map((v, i) => {
+    const x = (i / (N - 1)) * W;
+    const y = pad + (H - pad * 2) * (1 - (v - lo) / span);
+    return (i ? "L" : "M") + x.toFixed(1) + "," + y.toFixed(1);
+  }).join(" ");
+  const area = d + " L" + W + "," + H + " L0," + H + " Z";
+  return '<svg class="spark" viewBox="0 0 ' + W + " " + H + '" preserveAspectRatio="none">' +
+    '<path d="' + area + '" fill="' + tint + '" fill-opacity="0.13"/>' +
+    '<path d="' + d + '" fill="none" stroke="' + tint + '" stroke-width="1.6" ' +
+    'stroke-linejoin="round" stroke-linecap="round"/></svg>';
 }
 
 /* -------------------------------------------------------------- portfolio */
-const RAMP = ["#2f6fd0","#3d8bfd","#5b9ffd","#77b0fb","#93c1fa","#a9cdf8",
-              "#bcd8f7","#cbe0f6","#d8e7f5","#e2ecf5","#eaf1f7","#f1f5f9"];
+const SORTS = {
+  sym: p => p.sym,
+  mv: p => p.marketValue,
+  price: p => p.price,
+  day: p => p.dayPnl
+};
+
+function applyFilters(positions) {
+  let out = positions;
+  if (state.sector !== "All") {
+    out = out.filter(p => ((INSTRUMENTS[p.sym] || {}).sector || "Other") === state.sector);
+  }
+  const q = state.query.trim().toUpperCase();
+  if (q) {
+    out = out.filter(p =>
+      p.sym.indexOf(q) >= 0 || ((INSTRUMENTS[p.sym] || {}).name || "").toUpperCase().indexOf(q) >= 0);
+  }
+  const get = SORTS[state.sort.key] || SORTS.mv;
+  return out.slice().sort((a, b) => {
+    const x = get(a), y = get(b);
+    if (typeof x === "string") return state.sort.dir * x.localeCompare(y);
+    return state.sort.dir * (x - y);
+  });
+}
 
 function viewPortfolio() {
-  const pf = portfolio(), ps = pf.positions, s = pf.summary;
+  const pf = portfolio(), all = pf.positions, s = pf.summary;
   const dt = tone(s.dayPnl);
-  const partialStale = state.feed.stale.size > 0 && state.feed.stale.size < ps.length;
+  const rows = applyFilters(all);
 
   let h = "";
 
-  h += '<div id="hero">' +
-    '<div class="label">Net Liquidation Value &middot; USD</div>' +
-    '<div class="nlv">' + money(s.netLiquidation) + "</div>" +
-    '<div class="day"><span class="' + dt + '">' + sMoney(s.dayPnl) + "</span>" +
-    '<span class="' + dt + '">' + sPct(s.dayPnlPct) + "</span>" +
-    '<span class="cap">Today</span></div></div>';
+  // --- account header ----------------------------------------------------
+  h += '<div id="allacct"><span class="t">All Accounts (1)</span>' +
+       '<span class="caret">▾</span><span class="grow"></span>' +
+       '<span class="caret" id="acctToggle">' + (state.acctOpen ? "▲" : "▼") + "</span></div>";
 
-  h += '<div id="banner"><div class="main">' +
-    '<div class="cap">Total return since inception</div>' +
-    '<div class="ret">' + sPct(s.totalReturnPct) + "</div></div>" +
-    '<div class="side"><div class="mult">' + s.growth.toFixed(2) + "x</div>" +
-    '<div class="cagr">' + pct(s.cagrPct, 1) + " CAGR &middot; " + s.years.toFixed(1) + " yrs</div>" +
-    "</div></div>";
+  if (state.acctOpen) {
+    h += '<div class="card"><div class="pad">' +
+      '<div class="acct-top"><span class="dot"></span>' +
+      '<span class="nm">' + esc(ACCOUNT.title) + " (" + ACCOUNT.id + ')</span>' +
+      '<span class="chev">›</span></div>' +
+      '<div class="split" style="margin-top:14px">' +
+      '<div><div class="lbl">Total Assets · USD ▾</div>' +
+      '<div class="big num">' + money(s.netLiquidation) + "</div></div>" +
+      '<div class="r"><div class="lbl">Today’s P/L</div>' +
+      '<div class="mid num ' + dt + '">' + sMoney(s.dayPnl) + "</div>" +
+      '<div class="sub num ' + dt + '">' + sPct(s.dayPnlPct) + "</div></div></div>" +
+      "</div></div>";
+  }
 
+  // --- sector chips ------------------------------------------------------
+  const sectors = ["All"];
+  for (const p of all) {
+    const sec = (INSTRUMENTS[p.sym] || {}).sector || "Other";
+    if (sectors.indexOf(sec) < 0) sectors.push(sec);
+  }
+  h += '<div class="chiprow">' + sectors.map(sec =>
+    '<div class="c' + (sec === state.sector ? " on" : "") + '" data-sector="' + esc(sec) + '">' +
+    esc(sec) + "</div>").join("") + "</div>";
+
+  // --- return + stats ----------------------------------------------------
+  h += '<div class="card"><div class="pad">' +
+    '<div class="split">' +
+    '<div><div class="lbl">Total Return · since inception</div>' +
+    '<div class="big num ' + tone(s.totalPnl) + '">' + sPct(s.totalReturnPct) + "</div></div>" +
+    '<div class="r"><div class="lbl">Growth</div>' +
+    '<div class="mid num">' + s.growth.toFixed(2) + "x</div>" +
+    '<div class="sub" style="color:var(--text-3)">' + pct(s.cagrPct, 1) + " CAGR</div></div></div></div>";
+
+  // Full bleed inside the card — chartHtml sizes itself to the card's width,
+  // so it must not sit inside the padded block.
   h += chartHtml(state.curve);
 
-  h += section("Profit & Loss") + hr();
-  const cell = (l, v, cls, right) =>
-    '<div class="cell' + (right ? " r" : "") + '"><div class="stat-l">' + esc(l) + "</div>" +
-    '<div class="stat-v ' + (cls || "") + '">' + v + "</div></div>";
-  h += '<div class="grid">' + cell("Deposit", money(s.initialCapital)) +
-       cell("Realised", sMoney(s.realizedPnl), tone(s.realizedPnl), true) + "</div>";
-  h += '<div class="grid">' + cell("Open cost basis", money(s.openCost)) +
-       cell("Unrealised", sMoney(s.unrealizedPnl), tone(s.unrealizedPnl), true) + "</div>";
-  // Labels go through esc(), so they are written as plain text here.
-  h += '<div class="grid">' + cell("Settled cash", money(s.cash)) +
-       cell("Total P&L", sMoney(s.totalPnl), tone(s.totalPnl), true) + "</div>";
-  h += hr() + '<div class="note">Funded ' + shortDate(INCEPTION_DATE) + " with a single " +
-       whole(INITIAL_CAPITAL) + " USD deposit. No money added or withdrawn since. " +
-       "Mandate band " + RETURN_BAND.min + "%&ndash;" + RETURN_BAND.max + "%.</div>";
+  h += '<div class="pad" style="padding-top:0">' +
+    '<div class="chartcap"><span class="k">' + whole(state.curve.points[0].value) + " → " +
+    whole(state.curve.points[state.curve.points.length - 1].value) + "</span>" +
+    '<span class="k">' + (state.curve.basis === "marked"
+      ? "month-end closes" : "endpoints exact, path modelled") + "</span></div>";
 
-  h += section("Allocation", ps.length + " positions");
-  h += '<div id="allocbar">';
-  ps.forEach((p, i) => {
-    h += '<div style="flex:' + Math.max(p.weight, 0.0008) + ";background:" + RAMP[i % RAMP.length] + '"></div>';
-  });
-  const cw = s.cash / s.netLiquidation;
-  if (cw > 0) h += '<div style="flex:' + Math.max(cw, 0.0008) + ';background:var(--divider)"></div>';
-  h += "</div>";
-  h += '<div id="alloclegend">';
-  ps.forEach((p, i) => {
-    h += '<div class="li"><div class="sw" style="background:' + RAMP[i % RAMP.length] + '"></div>' +
-         '<div class="sy">' + p.sym + '</div><div class="wt">' + pct(p.weight * 100, 1) + "</div></div>";
-  });
-  h += "</div>";
+  // The third cell is computed, not asserted: it runs the same identities the
+  // Audit tab runs, so it cannot claim "reconciled" while something is off.
+  const reconciled = checkInvariants(pf).every(i => i.passed);
+  h += hr() + '<div class="trio" style="padding:14px 0 2px">' +
+    '<div class="t"><div class="lbl">Cost Basis</div><div class="tv num">' + money(s.openCost) + "</div></div>" +
+    '<div class="t"><div class="lbl">Realised P/L</div><div class="tv num ' + tone(s.realizedPnl) + '">' +
+      sMoney(s.realizedPnl) + "</div></div>" +
+    '<div class="t"><div class="lbl dotted">Reconciled</div><div class="tv ' +
+      (reconciled ? "up" : "down") + '">' + (reconciled ? "Yes" : "No") + "</div></div>" +
+    "</div></div></div>";
 
-  const themes = new Map();
-  for (const p of ps) {
-    const k = (INSTRUMENTS[p.sym] || {}).sector || "Unclassified";
-    themes.set(k, (themes.get(k) || 0) + p.marketValue);
+  // --- holdings ----------------------------------------------------------
+  h += sechead("Holdings", rows.length + " of " + all.length);
+  h += '<div class="card flush">';
+  h += '<div class="cols">' +
+    '<span class="h c1' + (state.sort.key === "sym" ? " on" : "") + '" data-sort="sym">Symbol' +
+      caret(state.sort.key === "sym", state.sort.dir) + "</span>" +
+    '<span class="h c2' + (state.sort.key === "mv" ? " on" : "") + '" data-sort="mv">MV/Qty' +
+      caret(state.sort.key === "mv", state.sort.dir) + "</span>" +
+    '<span class="h c3' + (state.sort.key === "price" ? " on" : "") + '" data-sort="price">Price/Cost' +
+      caret(state.sort.key === "price", state.sort.dir) + "</span>" +
+    '<span class="h c4' + (state.sort.key === "day" ? " on" : "") + '" data-sort="day">Today’s P/L' +
+      caret(state.sort.key === "day", state.sort.dir) + "</span>" +
+    "</div>" + hr();
+
+  if (!rows.length) {
+    h += '<div class="note" style="padding:20px 16px">No holdings match this filter.</div>';
   }
-  h += section("By theme") + hr();
-  Array.from(themes.entries()).sort((a, b) => b[1] - a[1]).forEach(([name, v]) => {
-    h += '<div class="theme-row"><span class="n">' + esc(name) + "</span>" +
-         '<span class="w">' + pct((v / s.netLiquidation) * 100, 1) + "</span>" +
-         '<span class="v">' + money(v) + "</span></div>" + hr(true);
-  });
-
-  h += section("Positions", s.winners + " up · " + s.losers + " down");
-  h += '<div class="cols"><span style="flex:3.1">Symbol / Position</span>' +
-       '<span style="flex:1.9;text-align:right">Last</span>' +
-       '<span style="flex:2.8;text-align:right">Value / Unreal P&amp;L</span></div>' + hr();
-
-  for (const p of ps) {
-    const dc = tone(p.dayChange), pc = tone(p.unrealized);
+  rows.forEach((p, i) => {
     const inst = INSTRUMENTS[p.sym] || { name: p.sym };
-    h += '<div class="row" data-sym="' + p.sym + '">' +
-      '<div class="idc"><div class="sym">' + p.sym +
-      (p.stale && partialStale ? ' <span style="color:var(--accent)">&bull;</span>' : "") + "</div>" +
-      '<div class="nm">' + esc(inst.name) + "</div>" +
-      '<div class="qty">' + qty(p.qty) + " @ " + px(p.avg) + "</div></div>" +
-      '<div class="qc"><div class="last ' + dc + '">' + px(p.price) + "</div>" +
-      '<div class="dpct ' + dc + '">' + sPct(p.dayChangePct) + "</div></div>" +
-      '<div class="vc"><div class="mv">' + money(p.marketValue) + "</div>" +
-      '<div class="pnl ' + pc + '">' + sMoney(p.unrealized) + "</div>" +
-      '<div class="pnlp ' + pc + '">' + sPct(p.unrealizedPct) + "</div></div></div>" + hr(true);
-  }
+    h += '<div class="hrow" data-sym="' + p.sym + '">' +
+      '<div class="c1"><div class="n1">' + esc(inst.name) + "</div>" +
+      '<div class="n2">' + p.sym + "</div></div>" +
+      '<div class="c2"><div class="v1 num">' + money(p.marketValue) + "</div>" +
+      '<div class="v2 num">' + qty(p.qty) + "</div></div>" +
+      '<div class="c3"><div class="v1 num">' + px(p.price) + "</div>" +
+      '<div class="v2 num">' + px(p.avg) + "</div></div>" +
+      '<div class="c4"><div class="v1 num ' + tone(p.dayPnl) + '">' + sMoney(p.dayPnl) + "</div>" +
+      '<div class="v2 num ' + tone(p.unrealized) + '">' + sPct(p.unrealizedPct) + "</div></div></div>" +
+      (i < rows.length - 1 ? hr(true) : "");
+  });
+  h += "</div>";
 
-  h += '<div class="cashrow"><span class="l">USD Cash</span>' +
-       '<span class="v">' + money(s.cash) + "</span></div>" + hr();
-  h += '<div class="totalrow"><span class="l">Total</span>' +
-       '<span class="v">' + money(s.netLiquidation) + "</span></div>";
+  h += '<div class="card"><div class="cashline" style="padding:13px 16px">' +
+    '<span class="l">USD Cash</span><span class="v num">' + money(s.cash) + "</span></div>" + hr() +
+    '<div class="cashline" style="padding:13px 16px">' +
+    '<span class="l" style="color:var(--text);font-weight:700">Net Assets</span>' +
+    '<span class="v num" style="font-weight:700">' + money(s.netLiquidation) + "</span></div></div>";
+
+  h += '<div class="note">Funded ' + shortDate(INCEPTION_DATE) + " with a single " +
+    whole(INITIAL_CAPITAL) + " USD deposit. No money added or withdrawn since. " +
+    "Mandate band " + RETURN_BAND.min + "%–" + RETURN_BAND.max + "%.</div>";
 
   return h;
 }
 
 /* -------------------------------------------------------------- watchlist */
+const WSORTS = { sym: p => p.sym, price: p => p.price, chg: p => p.dayChangePct };
+
 function viewWatchlist() {
-  const ps = portfolio().positions.slice().sort((a, b) => b.dayChangePct - a.dayChangePct);
-  const up = ps.filter(p => p.dayChange > 0).length;
-  const down = ps.filter(p => p.dayChange < 0).length;
+  const pf = portfolio(), s = pf.summary;
+  const anchors = priceAnchors(state.feed.quotes, Date.now());
 
-  let h = section("AI Value Chain", up + " up · " + down + " down");
-  h += '<div class="cols"><span style="flex:3">Symbol</span>' +
-       '<span style="flex:2;text-align:right">Last</span>' +
-       '<span style="flex:2;text-align:right">Change</span>' +
-       '<span style="flex:2.4;text-align:right">Day P&amp;L</span></div>' + hr();
-
-  for (const p of ps) {
-    const t = tone(p.dayChange);
-    const inst = INSTRUMENTS[p.sym] || { name: p.sym };
-    h += '<div class="row" data-sym="' + p.sym + '">' +
-      '<div style="flex:3;min-width:0"><div class="sym" style="font-size:14px">' + p.sym + "</div>" +
-      '<div class="qty" style="font-size:10px">' + esc(inst.name) + "</div></div>" +
-      '<div style="flex:2;text-align:right"><div class="last ' + t + '" style="font-size:13px">' + px(p.price) + "</div>" +
-      '<div class="qty">prev ' + px(p.prev) + "</div></div>" +
-      '<div style="flex:2;text-align:right"><div class="last ' + t + '" style="font-size:13px">' + sPct(p.dayChangePct) + "</div>" +
-      '<div class="qty ' + t + '">' + sMoney(p.dayChange) + "</div></div>" +
-      '<div style="flex:2.4;text-align:right"><div class="last ' + t + '" style="font-size:13px">' + sMoney(p.dayPnl) + "</div>" +
-      '<div class="qty">' + money(p.marketValue) + "</div></div></div>" + hr(true);
+  let rows = pf.positions.slice();
+  const q = state.query.trim().toUpperCase();
+  if (q) {
+    rows = rows.filter(p =>
+      p.sym.indexOf(q) >= 0 || ((INSTRUMENTS[p.sym] || {}).name || "").toUpperCase().indexOf(q) >= 0);
   }
+  const get = WSORTS[state.wsort.key] || WSORTS.chg;
+  rows.sort((a, b) => {
+    const x = get(a), y = get(b);
+    if (typeof x === "string") return state.wsort.dir * x.localeCompare(y);
+    return state.wsort.dir * (x - y);
+  });
+
+  const dt = tone(s.dayPnl);
+  let h = '<div class="card"><div class="pad">' +
+    '<div class="acct-top"><span class="dot"></span>' +
+    '<span class="nm">' + esc(ACCOUNT.title) + " (" + ACCOUNT.id + ')</span>' +
+    '<span class="chev">›</span></div>' +
+    '<div class="split" style="margin-top:12px">' +
+    '<div><div class="lbl">US Assets · USD</div>' +
+    '<div class="big num">' + money(s.securities) + "</div></div>" +
+    '<div class="r"><div class="lbl">Today’s P/L</div>' +
+    '<div class="mid num ' + dt + '">' + sMoney(s.dayPnl) + "</div>" +
+    '<div class="sub num ' + dt + '">' + sPct(s.dayPnlPct) + "</div></div></div></div></div>";
+
+  h += '<div class="wtool">' +
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="8" height="16" rx="2"/><rect x="13" y="4" width="8" height="7" rx="2"/></svg>' +
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 17l5-6 4 3 5-8 4 5"/></svg>' +
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>' +
+    '<span class="grow"></span>' +
+    '<span class="s' + (state.wsort.key === "price" ? " on" : "") + '" data-wsort="price">Price' +
+      caret(state.wsort.key === "price", state.wsort.dir) + "</span>" +
+    '<span class="s' + (state.wsort.key === "chg" ? " on" : "") + '" data-wsort="chg">% Chg' +
+      caret(state.wsort.key === "chg", state.wsort.dir) + "</span>" +
+    "</div>";
+
+  h += '<div class="card flush">';
+  rows.forEach((p, i) => {
+    const t = tone(p.dayChange);
+    // The sparkline traces the path since first purchase, so it is tinted by
+    // that move — not by today's, which would leave a line sloping down over
+    // four years coloured green because it happens to be up on the day.
+    const sinceTone = tone(p.unrealized);
+    const tint = sinceTone === "up" ? "#00c46a" : sinceTone === "down" ? "#f4485c" : "#9ba0a8";
+    const inst = INSTRUMENTS[p.sym] || { name: p.sym };
+    h += '<div class="wrow" data-sym="' + p.sym + '">' +
+      '<div class="id"><div class="n1">' + esc(inst.name) + "</div>" +
+      '<div class="n2">' + p.sym + "</div></div>" +
+      sparkline(p.sym, anchors, Date.now(), tint) +
+      '<div class="px"><div class="v1 num ' + t + '">' + px(p.price) + "</div>" +
+      '<div class="v2 num">' + px(p.prev) + "</div></div>" +
+      '<div class="pc"><span class="chip-pct ' + t + '">' + sPct(p.dayChangePct) + "</span>" +
+      '<div class="v2 num" style="text-align:right">' + sPct(p.unrealizedPct, 1) + " total</div></div>" +
+      "</div>" + (i < rows.length - 1 ? hr(true) : "");
+  });
+  h += "</div>";
+
+  h += '<div class="note">Sparklines trace each holding from its first purchase to the current ' +
+    "mark, interpolated between the prices the account actually transacted at.</div>";
+
   return h;
 }
 
@@ -1099,23 +1245,27 @@ function viewActivity() {
   }
   lines.reverse();
 
-  let h = section("Statement", buys + " buys · " + (TRADES.length - buys) + " sells");
-  h += '<div class="box">' + TRADES.length + " fills since " + shortDate(INCEPTION_DATE) +
-       ". Realised P&amp;L across all closed share lots is " +
-       '<span class="' + tone(s.realizedPnl) + '">' + sMoney(s.realizedPnl) + "</span>" +
-       ", which stayed in the account and funded later buys.</div>" + hr();
+  let h = sechead("Statement", buys + " buys · " + (TRADES.length - buys) + " sells");
+  h += '<div class="card"><div class="pad" style="font-size:13px;line-height:19px;color:var(--text-2)">' +
+    TRADES.length + " fills since " + shortDate(INCEPTION_DATE) +
+    ". Realised P&amp;L across all closed share lots is " +
+    '<span class="' + tone(s.realizedPnl) + '">' + sMoney(s.realizedPnl) + "</span>" +
+    ", which stayed in the account and funded later buys.</div></div>";
 
-  for (const l of lines) {
-    const col = l.side === "SELL" ? "var(--accent)" : l.side === "DEPOSIT" ? "var(--info)" : "var(--gain)";
+  h += '<div class="card flush">';
+  lines.forEach((l, i) => {
+    const cls = l.side === "SELL" ? "sell" : l.side === "DEPOSIT" ? "dep" : "buy";
     const inst = INSTRUMENTS[l.sym];
     h += '<div class="act"><div class="l">' +
-      '<div class="top"><span class="side" style="color:' + col + '">' + l.side + "</span>" +
+      '<div class="top"><span class="tag ' + cls + '">' + l.side + "</span>" +
       '<span class="sym">' + l.sym + '</span><span class="dt">' + shortDate(l.date) + "</span></div>" +
-      '<div class="det">' + esc(l.detail) + (inst ? " · " + esc(inst.name) : "") + "</div>" +
+      '<div class="det num">' + esc(l.detail) + (inst ? " · " + esc(inst.name) : "") + "</div>" +
       '<div class="why">' + esc(l.note) + "</div></div>" +
-      '<div class="r"><div class="gross ' + tone(l.gross) + '">' + sMoney(l.gross) + "</div>" +
-      '<div class="cl">cash after</div><div class="ca">' + money(l.cashAfter) + "</div></div></div>" + hr(true);
-  }
+      '<div class="r"><div class="g num ' + tone(l.gross) + '">' + sMoney(l.gross) + "</div>" +
+      '<div class="ca num">cash ' + money(l.cashAfter) + "</div></div></div>" +
+      (i < lines.length - 1 ? hr(true) : "");
+  });
+  h += "</div>";
   return h;
 }
 
@@ -1131,30 +1281,31 @@ function viewAudit() {
   const down  = ((floor - s.netLiquidation) / s.netLiquidation) * 100;
   const up    = ((ceil  - s.netLiquidation) / s.netLiquidation) * 100;
 
-  const tick = '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="var(--gain)" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="9" stroke-width="1.5"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg>';
-  const cross = '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="var(--loss)" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="9" stroke-width="1.5"/><path d="M9 9l6 6M15 9l-6 6"/></svg>';
+  const tick = '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="var(--up)" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9" stroke-width="1.5"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg>';
+  const cross = '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="var(--down)" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9" stroke-width="1.5"/><path d="M9 9l6 6M15 9l-6 6"/></svg>';
 
-  let h = '<div id="verdict" style="border-left-color:' + (allPass ? "var(--gain)" : "var(--loss)") + '">' +
-    (allPass ? tick : cross).replace('class="ico"', 'style="width:22px;height:22px;flex:none"') +
+  let h = '<div class="card"><div class="pad"><div class="verdict">' +
+    (allPass ? tick : cross).replace('class="ico"', 'style="width:26px;height:26px;flex:none"') +
     '<div><div class="t">' + (allPass ? "Reconciled" : "Reconciliation failed") + "</div>" +
     '<div class="b">' + inv.filter(i => i.passed).length + " of " + inv.length +
-    " accounting identities hold against " + (state.feed.live ? "live" : "snapshot") + " marks.</div></div></div>";
+    " accounting identities hold against " + (state.feed.live ? "live" : "snapshot") +
+    " marks.</div></div></div></div></div>";
 
-  const dr = (l, v, cls, strong) =>
-    '<div class="dr' + (strong ? " strong" : "") + '"><span class="dl">' + l +
-    '</span><span class="dv ' + (cls || "") + '">' + v + "</span></div>";
+  const kv = (k, v, cls, strong) =>
+    '<div class="kv' + (strong ? " strong" : "") + '"><span class="k">' + k +
+    '</span><span class="v num ' + (cls || "") + '">' + v + "</span></div>";
 
-  h += section("How the return is computed") + hr() + '<div class="deriv">' +
-    dr("Opening deposit", money(INITIAL_CAPITAL)) +
-    dr("Securities at last price", money(s.securities)) +
-    dr("Settled cash", money(s.cash)) + hr() +
-    dr("Net liquidation value", money(s.netLiquidation), "", true) +
-    dr("less opening deposit", "(" + money(INITIAL_CAPITAL) + ")") + hr() +
-    dr("Total P&amp;L", sMoney(s.totalPnl), tone(s.totalPnl), true) +
-    dr("&divide; " + money(INITIAL_CAPITAL) + " deposit", sPct(s.totalReturnPct), tone(s.totalPnl), true) +
-    "</div>";
+  h += sechead("How the return is computed");
+  h += '<div class="card"><div class="pad">' +
+    kv("Opening deposit", money(INITIAL_CAPITAL)) +
+    kv("Securities at last price", money(s.securities)) +
+    kv("Settled cash", money(s.cash)) + hr() +
+    kv("Net liquidation value", money(s.netLiquidation), "", true) +
+    kv("less opening deposit", "(" + money(INITIAL_CAPITAL) + ")") + hr() +
+    kv("Total P&amp;L", sMoney(s.totalPnl), tone(s.totalPnl), true) +
+    kv("÷ " + money(INITIAL_CAPITAL) + " deposit", sPct(s.totalReturnPct), tone(s.totalPnl), true) +
+    "</div></div>";
 
-  // Where the actual return sits inside the mandate band.
   const lo = RETURN_BAND.min - (RETURN_BAND.max - RETURN_BAND.min) * 0.35;
   const hi = RETURN_BAND.max + (RETURN_BAND.max - RETURN_BAND.min) * 0.35;
   const clamp = n => Math.max(0, Math.min(1, n));
@@ -1162,33 +1313,33 @@ function viewAudit() {
   const b0 = clamp((RETURN_BAND.min - lo) / (hi - lo)) * 100;
   const b1 = clamp((RETURN_BAND.max - lo) / (hi - lo)) * 100;
 
-  // Uses .deriv so the label/value rows get the same space-between layout as
-  // the derivation above rather than collapsing together.
-  h += section("Mandate band") + hr() + '<div class="deriv">' +
-    '<div class="dr"><span class="dl">Target</span><span class="dv">' +
-    RETURN_BAND.min + "% &ndash; " + RETURN_BAND.max + "%</span></div>" +
-    '<div class="dr"><span class="dl">Actual</span><span class="dv ' + (inBand ? "up" : "down") + '">' +
-    sPct(s.totalReturnPct) + "</span></div>" +
+  h += sechead("Mandate band");
+  h += '<div class="card"><div class="pad">' +
+    kv("Target", RETURN_BAND.min + "% – " + RETURN_BAND.max + "%") +
+    kv("Actual", sPct(s.totalReturnPct), inBand ? "up" : "down") +
     '<div id="meter"><div class="track"></div>' +
     '<div class="band" style="left:' + b0 + "%;width:" + (b1 - b0) + '%"></div>' +
     '<div class="mark" style="left:' + posP + '%"></div></div>' +
-    '<div class="note" style="padding:12px 0 0">Marks move with the market, so the band is a ' +
-    "calibration and not a guarantee. From here the book can fall " + Math.abs(down).toFixed(1) +
-    "% before it drops below " + RETURN_BAND.min + "%, or rise " + up.toFixed(1) +
-    "% before it exceeds " + RETURN_BAND.max + "%.</div></div>";
+    '<div class="note in">Marks move with the market, so the band is a calibration and not a ' +
+    "guarantee. From here the book can fall " + Math.abs(down).toFixed(1) + "% before it drops " +
+    "below " + RETURN_BAND.min + "%, or rise " + up.toFixed(1) + "% before it exceeds " +
+    RETURN_BAND.max + "%.</div></div></div>";
 
-  h += section("Accounting identities") + hr();
-  for (const i of inv) {
+  h += sechead("Accounting identities", inv.filter(i => i.passed).length + "/" + inv.length);
+  h += '<div class="card flush">';
+  inv.forEach((i, n) => {
     h += '<div class="chk">' + (i.passed ? tick : cross) +
       '<div><div class="n">' + esc(i.name) + "</div>" +
       '<div class="d">' + esc(i.detail) + "</div>" +
-      '<div class="num">expected ' + i.expected.toFixed(4) + " · actual " + i.actual.toFixed(4) +
-      " · delta " + Math.abs(i.expected - i.actual).toExponential(2) + "</div></div></div>" + hr(true);
-  }
+      '<div class="x">expected ' + i.expected.toFixed(4) + " · actual " + i.actual.toFixed(4) +
+      " · delta " + Math.abs(i.expected - i.actual).toExponential(2) + "</div></div></div>" +
+      (n < inv.length - 1 ? hr(true) : "");
+  });
+  h += "</div>";
 
-  h += section("Provenance") + hr();
-  const fact = (l, v) => '<div class="f"><div class="fl">' + esc(l) + '</div><div class="fv">' + v + "</div></div>";
-  h += '<div class="facts">' +
+  h += sechead("Provenance");
+  const fact = (l, v) => '<div class="f"><div class="fl">' + esc(l) + '</div><div class="fv num">' + v + "</div></div>";
+  h += '<div class="card"><div class="pad"><div class="facts">' +
     fact("Inception", shortDate(INCEPTION_DATE)) +
     fact("Track record", s.years.toFixed(2) + " yrs") +
     fact("Fills", String(TRADES.length)) +
@@ -1196,30 +1347,31 @@ function viewAudit() {
     fact("Open positions", String(ps.length)) +
     fact("Down positions", String(s.losers)) +
     fact("CAGR", pct(s.cagrPct, 1)) +
-    fact("Growth", s.growth.toFixed(2) + "x") + "</div>";
-  h += '<div class="note">Positions, cost basis, realised P&amp;L and cash are replayed from the ' +
+    fact("Growth", s.growth.toFixed(2) + "x") + "</div>" +
+    '<div class="note in">Positions, cost basis, realised P&amp;L and cash are replayed from the ' +
     TRADES.length + "-row ledger on every render using average-cost accounting. No total is stored " +
     "anywhere, so no two figures in the app can disagree. The ledger is the account’s own " +
     "transaction record, shipped with the app; prices are the only external input and come from " +
-    "the live quote feed.</div>";
+    "the live quote feed.</div></div></div>";
 
-  h += section("Data source") + hr();
-  h += '<div class="note" style="padding-top:12px">Safari blocks a direct call to the quote API, ' +
-    "so requests go through a relay. Point this at your own and nothing leaves your control; " +
-    'leave it blank to use the public fallbacks. Use <span class="mono">{url}</span> as the ' +
-    "placeholder, or end with a trailing <span class=\"mono\">?url=</span> style parameter.</div>";
-  h += '<div class="setrow"><label>Relay endpoint</label>' +
+  h += sechead("Data source");
+  h += '<div class="card"><div class="pad">' +
+    '<div class="note in" style="padding-top:0">Safari blocks a direct call to the quote API, so ' +
+    "requests go through a relay. Point this at your own and nothing leaves your control; leave " +
+    "it blank to use the public fallbacks. Use <b>{url}</b> as the placeholder, or end with a " +
+    "trailing <b>?url=</b> style parameter.</div>" +
+    '<div class="setrow"><label>Relay endpoint</label>' +
     '<input id="relayInput" type="url" inputmode="url" autocapitalize="off" autocorrect="off" ' +
     'spellcheck="false" placeholder="https://my-relay.example.com/?url={url}" value="' +
-    esc(store.get("aiap.relay", "")) + '"></div>';
-  h += '<div class="btnrow"><button class="btn" id="relayClear">Clear</button>' +
-    '<button class="btn primary" id="relaySave">Save &amp; refresh</button></div>';
-  h += '<div class="note" style="padding-bottom:16px">Status: ' +
+    esc(store.get("aiap.relay", "")) + '"></div>' +
+    '<div class="btnrow"><button class="btn" id="relayClear">Clear</button>' +
+    '<button class="btn primary" id="relaySave">Save &amp; refresh</button></div>' +
+    '<div class="note in">Status: ' +
     (state.feed.live ? "live on all " + SYMBOLS.length + " symbols."
                      : state.feed.stale.size === SYMBOLS.length
                        ? "no relay reachable — showing snapshot marks from " + SNAPSHOT_AS_OF.slice(0, 10) + "."
                        : state.feed.stale.size + " of " + SYMBOLS.length + " symbols on snapshot marks.") +
-    "</div>";
+    "</div></div></div>";
 
   return h;
 }
@@ -1234,51 +1386,58 @@ function viewDetail(sym) {
   const pc = tone(p.unrealized), dc = tone(p.dayChange);
 
   let h = '<div id="back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
-    'stroke-width="2.5" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg>Portfolio</div>';
+    'stroke-width="2.4" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg>Portfolio</div>';
 
-  h += '<div class="dhead"><div class="sym">' + p.sym + "</div>" +
+  h += '<div class="card"><div class="pad"><div class="dhead">' +
+    '<div class="sym">' + p.sym + "</div>" +
     '<div class="nm">' + esc(inst.name) + "</div>" +
     '<div class="venue">' + esc(inst.ex) + " · USD · " + esc(inst.sector) + "</div>" +
-    '<div class="last ' + dc + '">' + px(p.price) + "</div>" +
-    '<div class="dl ' + dc + '">' + sMoney(p.dayChange) + " (" + sPct(p.dayChangePct) + ") today</div></div>";
+    '<div class="last num ' + dc + '">' + px(p.price) + "</div>" +
+    '<div class="dl num ' + dc + '">' + sMoney(p.dayChange) + " (" + sPct(p.dayChangePct) +
+    ") today</div></div></div></div>";
 
-  h += '<div class="box"><div class="fl" style="font-size:10px;font-weight:700;letter-spacing:.4px;' +
-    'text-transform:uppercase;color:var(--text-3);margin-bottom:4px">Thesis</div>' +
-    esc(inst.thesis) + "</div>";
+  h += '<div class="card"><div class="pad" style="font-size:13px;line-height:19px;color:var(--text-2)">' +
+    '<div class="lbl" style="margin-bottom:6px">Thesis</div>' + esc(inst.thesis) + "</div></div>";
 
-  const row = (l, v, cls) => '<div class="drow"><span class="l">' + esc(l) +
-    '</span><span class="v ' + (cls || "") + '">' + v + "</span></div>" + hr(true);
+  const kv = (k, v, cls) =>
+    '<div class="kv"><span class="k">' + esc(k) + '</span><span class="v num ' + (cls || "") + '">' +
+    v + "</span></div>";
 
-  h += section("Position") + hr() +
-    row("Quantity", qty(p.qty)) +
-    row("Average cost", px(p.avg)) +
-    row("Cost basis", money(p.cost)) +
-    row("Last price", px(p.price)) +
-    row("Market value", money(p.marketValue)) +
-    row("Unrealised P&L", sMoney(p.unrealized), pc) +
-    row("Unrealised return", sPct(p.unrealizedPct), pc) +
-    row("Realised P&L", sMoney(p.realized), tone(p.realized)) +
-    row("Portfolio weight", pct(p.weight * 100, 2)) +
-    row("First bought", shortDate(p.firstBuy));
+  h += sechead("Position");
+  h += '<div class="card"><div class="pad">' +
+    kv("Quantity", qty(p.qty)) +
+    kv("Average cost", px(p.avg)) +
+    kv("Cost basis", money(p.cost)) +
+    kv("Last price", px(p.price)) +
+    kv("Market value", money(p.marketValue)) +
+    kv("Unrealised P&L", sMoney(p.unrealized), pc) +
+    kv("Unrealised return", sPct(p.unrealizedPct), pc) +
+    kv("Realised P&L", sMoney(p.realized), tone(p.realized)) +
+    kv("Portfolio weight", pct(p.weight * 100, 2)) +
+    kv("First bought", shortDate(p.firstBuy)) +
+    "</div></div>";
 
-  h += section("Check") + hr() + '<div class="proof">' +
-    qty(p.qty) + " &times; " + px(p.price) + " = " + money(p.marketValue) + "<br>" +
-    money(p.marketValue) + " &minus; " + money(p.cost) + " = " +
+  h += sechead("Check");
+  h += '<div class="card"><div class="pad"><div class="proof">' +
+    qty(p.qty) + " × " + px(p.price) + " = " + money(p.marketValue) + "<br>" +
+    money(p.marketValue) + " − " + money(p.cost) + " = " +
     '<span class="' + pc + '">' + sMoney(p.unrealized) + "</span><br>" +
-    sMoney(p.unrealized) + " &divide; " + money(p.cost) + " = " +
-    '<span class="' + pc + '">' + sPct(p.unrealizedPct) + "</span></div>";
+    sMoney(p.unrealized) + " ÷ " + money(p.cost) + " = " +
+    '<span class="' + pc + '">' + sPct(p.unrealizedPct) + "</span></div></div></div>";
 
   const trades = TRADES.filter(t => t.sym === sym);
-  h += section("Trades (" + trades.length + ")") + hr();
-  for (const t of trades) {
+  h += sechead("Trades (" + trades.length + ")");
+  h += '<div class="card flush">';
+  trades.forEach((t, i) => {
     h += '<div class="act"><div class="l"><div class="top">' +
-      '<span class="side" style="color:' + (t.side === "BUY" ? "var(--gain)" : "var(--accent)") + '">' +
-      t.side + '</span><span class="dt">' + shortDate(t.date) + "</span></div>" +
+      '<span class="tag ' + (t.side === "BUY" ? "buy" : "sell") + '">' + t.side + "</span>" +
+      '<span class="dt">' + shortDate(t.date) + "</span></div>" +
       '<div class="why">' + esc(t.note) + "</div></div>" +
-      '<div class="r"><div class="ca" style="font-size:12px;color:var(--text)">' +
-      qty(t.qty) + " @ " + px(t.px) + "</div>" +
-      '<div class="ca">' + money(t.qty * t.px) + "</div></div></div>" + hr(true);
-  }
+      '<div class="r"><div class="g num" style="font-size:14px">' + qty(t.qty) + " @ " + px(t.px) + "</div>" +
+      '<div class="ca num">' + money(t.qty * t.px) + "</div></div></div>" +
+      (i < trades.length - 1 ? hr(true) : "");
+  });
+  h += "</div>";
   return h;
 }
 
@@ -1287,20 +1446,20 @@ function viewDetail(sym) {
    ========================================================================== */
 
 const TABS = [
-  { key: "portfolio", label: "Portfolio", sub: ACCOUNT.title,
-    icon: '<path d="M12 3a9 9 0 109 9h-9z"/><path d="M14 2.5A9 9 0 0121.5 10H14z"/>' },
-  { key: "watchlist", label: "Watchlist", sub: "WATCHLIST · AI VALUE CHAIN",
-    icon: '<path d="M4 20V10M9.3 20V4M14.7 20v-8M20 20V7"/>' },
-  { key: "activity",  label: "Activity",  sub: "ACTIVITY · FULL STATEMENT",
+  { key: "portfolio", label: "Portfolio", title: "Portfolio",
+    icon: '<rect x="2.5" y="5.5" width="19" height="14" rx="3.5"/><path d="M16 11h4v3h-4a1.5 1.5 0 010-3z"/>' },
+  { key: "watchlist", label: "Watchlist", title: "Watchlist",
+    icon: '<path d="M12 20s-7.5-4.7-7.5-9.4A4.1 4.1 0 0112 8.3a4.1 4.1 0 017.5 2.3C19.5 15.3 12 20 12 20z"/>' },
+  { key: "activity", label: "Activity", title: "Activity",
     icon: '<path d="M4 8h13l-3-3M20 16H7l3 3"/>' },
-  { key: "audit",     label: "Audit",     sub: "AUDIT · RECONCILIATION",
+  { key: "audit", label: "Audit", title: "Audit",
     icon: '<path d="M12 3l8 3v6c0 4.5-3.2 7.8-8 9-4.8-1.2-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/>' }
 ];
 
 function renderTabs() {
   document.getElementById("tabs").innerHTML = TABS.map(t =>
     '<div class="tab' + (t.key === state.tab && !state.detail ? " on" : "") + '" data-tab="' + t.key + '">' +
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" ' +
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" ' +
     'stroke-linecap="round" stroke-linejoin="round">' + t.icon + "</svg>" +
     '<span class="lab">' + t.label + "</span></div>").join("");
 }
@@ -1320,8 +1479,7 @@ function renderStrip() {
 
 function render() {
   const tab = TABS.find(t => t.key === state.tab);
-  document.getElementById("acctSub").textContent = state.detail ? "POSITION DETAIL" : tab.sub;
-  document.getElementById("acctId").textContent = ACCOUNT.id;
+  document.getElementById("screenTitle").textContent = state.detail ? "Position" : tab.title;
 
   let html;
   try {
@@ -1348,28 +1506,65 @@ document.getElementById("tabs").addEventListener("click", e => {
   render();
 });
 
+document.getElementById("searchBtn").addEventListener("click", () => {
+  const wrap = document.getElementById("searchWrap");
+  const input = document.getElementById("searchInput");
+  const open = wrap.hidden;
+  wrap.hidden = !open;
+  document.getElementById("searchBtn").classList.toggle("on", open);
+  if (open) input.focus();
+  else if (state.query) { state.query = ""; input.value = ""; render(); }
+});
+
+document.getElementById("searchInput").addEventListener("input", e => {
+  state.query = e.target.value;
+  render();
+});
+
 sheet.addEventListener("click", e => {
-  if (e.target.closest("#back")) {
-    state.detail = null;
+  if (e.target.closest("#back")) { state.detail = null; render(); return; }
+
+  if (e.target.closest("#acctToggle")) { state.acctOpen = !state.acctOpen; render(); return; }
+
+  const sector = e.target.closest("[data-sector]");
+  if (sector) { state.sector = sector.getAttribute("data-sector"); render(); return; }
+
+  const sortCol = e.target.closest("[data-sort]");
+  if (sortCol) {
+    const key = sortCol.getAttribute("data-sort");
+    // Same column toggles direction; a new column starts descending, which is
+    // what you want for every numeric column here.
+    state.sort = state.sort.key === key
+      ? { key, dir: -state.sort.dir }
+      : { key, dir: key === "sym" ? 1 : -1 };
     render();
     return;
   }
+
+  const wsortCol = e.target.closest("[data-wsort]");
+  if (wsortCol) {
+    const key = wsortCol.getAttribute("data-wsort");
+    state.wsort = state.wsort.key === key
+      ? { key, dir: -state.wsort.dir }
+      : { key, dir: -1 };
+    render();
+    return;
+  }
+
   if (e.target.closest("#relaySave")) {
-    const v = document.getElementById("relayInput").value.trim();
-    store.set("aiap.relay", v);
-    workingRelay = -1;
-    store.set("aiap.relayIndex", "-1");
+    store.set("aiap.relay", document.getElementById("relayInput").value.trim());
+    workingRelay = -1; store.set("aiap.relayIndex", "-1");
     refresh();
     return;
   }
   if (e.target.closest("#relayClear")) {
     store.set("aiap.relay", "");
     document.getElementById("relayInput").value = "";
-    workingRelay = -1;
-    store.set("aiap.relayIndex", "-1");
+    workingRelay = -1; store.set("aiap.relayIndex", "-1");
     refresh();
     return;
   }
+
   const row = e.target.closest("[data-sym]");
   if (row) {
     state.detail = row.getAttribute("data-sym");
@@ -1387,20 +1582,19 @@ document.getElementById("strip").addEventListener("click", refresh);
   const scroller = document.getElementById("scroller");
   const pull = document.getElementById("pull");
   const THRESHOLD = 64;
-  let startY = 0, pulling = false, dist = 0;
+  let startY = 0, pulling = false;
 
   scroller.addEventListener("touchstart", e => {
     if (scroller.scrollTop <= 0 && e.touches.length === 1) {
       startY = e.touches[0].clientY;
       pulling = true;
-      dist = 0;
       pull.style.transition = "none";
     }
   }, { passive: true });
 
   scroller.addEventListener("touchmove", e => {
     if (!pulling) return;
-    dist = e.touches[0].clientY - startY;
+    const dist = e.touches[0].clientY - startY;
     if (dist <= 0) { pull.style.height = "0px"; return; }
     const h = Math.min(dist * 0.5, 90);          // resistance
     pull.style.height = h + "px";
@@ -1465,28 +1659,23 @@ window.addEventListener("resize", () => {
     const S = 180, c = document.createElement("canvas");
     c.width = c.height = S;
     const g = c.getContext("2d");
-    g.fillStyle = "#000"; g.fillRect(0, 0, S, S);
 
-    const pts = [[18,140],[46,128],[74,112],[102,74],[130,52],[162,26]];
-    const grad = g.createLinearGradient(0, 40, 0, 150);
-    grad.addColorStop(0, "rgba(0,194,110,0.34)");
-    grad.addColorStop(1, "rgba(0,194,110,0)");
+    const bg = g.createLinearGradient(0, 0, S, S);
+    bg.addColorStop(0, "#ff9a2e");
+    bg.addColorStop(1, "#ff6a00");
+    g.fillStyle = bg; g.fillRect(0, 0, S, S);
+
+    const pts = [[26,132],[54,120],[82,104],[110,70],[138,52],[158,34]];
     g.beginPath();
     g.moveTo(pts[0][0], pts[0][1]);
     for (const p of pts) g.lineTo(p[0], p[1]);
-    g.lineTo(162, 150); g.lineTo(18, 150); g.closePath();
-    g.fillStyle = grad; g.fill();
+    g.strokeStyle = "rgba(0,0,0,0.72)";
+    g.lineWidth = 11; g.lineJoin = "round"; g.lineCap = "round";
+    g.stroke();
 
-    g.beginPath();
-    g.moveTo(pts[0][0], pts[0][1]);
-    for (const p of pts) g.lineTo(p[0], p[1]);
-    g.strokeStyle = "#00c26e"; g.lineWidth = 9;
-    g.lineJoin = "round"; g.lineCap = "round"; g.stroke();
-
-    g.fillStyle = "#f2f4f7";
-    g.font = "700 34px -apple-system, Helvetica, sans-serif";
-    g.textBaseline = "alphabetic";
-    g.fillText("AI", 18, 44);
+    g.fillStyle = "rgba(0,0,0,0.72)";
+    g.font = "800 36px -apple-system, Helvetica, sans-serif";
+    g.fillText("AI", 24, 56);
 
     const link = document.createElement("link");
     link.rel = "apple-touch-icon";

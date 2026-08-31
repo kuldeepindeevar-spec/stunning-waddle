@@ -238,17 +238,21 @@ await page.getByText('Portfolio', { exact: true }).last().click();
 await page.setViewportSize({ width: 852, height: 393 });
 await page.waitForTimeout(500);
 const landscape = await page.evaluate(() => {
-  const svg = document.querySelector('#chartwrap svg');
+  const wrap = document.getElementById('chartwrap');
+  const svg = wrap?.querySelector('svg');
   const vb = svg?.getAttribute('viewBox')?.split(' ') ?? [];
   return {
     viewBoxWidth: Number(vb[2] ?? 0),
-    clientWidth: document.documentElement.clientWidth,
+    // The chart lives inside an inset card, so it is measured against its own
+    // container rather than the viewport — that stays true if the card's
+    // margins ever change.
+    containerWidth: wrap ? Math.round(wrap.getBoundingClientRect().width) : 0,
     overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
   };
 });
-check(Math.abs(landscape.viewBoxWidth - landscape.clientWidth) <= 1,
+check(Math.abs(landscape.viewBoxWidth - landscape.containerWidth) <= 1,
   'Chart repaints to the new width on rotation',
-  `viewBox ${landscape.viewBoxWidth} vs viewport ${landscape.clientWidth}`);
+  `viewBox ${landscape.viewBoxWidth} vs container ${landscape.containerWidth}`);
 check(!landscape.overflow, 'No horizontal overflow in landscape');
 await page.setViewportSize({ width: 393, height: 852 });
 await page.waitForTimeout(400);
@@ -271,7 +275,7 @@ check(detailOk, 'Position detail opens from the blotter');
 await page.getByText('Portfolio', { exact: true }).first().click();
 await page.waitForTimeout(300);
 const backOk = await page.evaluate(() =>
-  (document.getElementById('sheet')!.textContent ?? '').includes('Net Liquidation Value'));
+  (document.getElementById('sheet')!.textContent ?? '').includes('Total Assets'));
 check(backOk, 'Back returns to the portfolio');
 
 if (shotDir) {
