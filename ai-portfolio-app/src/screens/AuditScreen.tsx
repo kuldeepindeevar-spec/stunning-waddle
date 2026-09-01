@@ -8,12 +8,13 @@
  */
 
 import React from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { colors, pnlColor, spacing, tabular, type } from '../theme';
 import { money, pct, signedMoney, signedPct, shortDate } from '../lib/format';
 import { Card, Divider, KeyValue, SectionHeader } from '../components/primitives';
+import { radius } from '../theme';
 import { checkInvariants } from '../lib/portfolio';
 import { INITIAL_CAPITAL, INCEPTION_DATE, TRADES } from '../data/ledger';
 import { RETURN_BAND } from '../data/snapshot';
@@ -31,7 +32,15 @@ const Mark = ({ passed, size = 18 }: { passed: boolean; size?: number }) => (
   </Svg>
 );
 
-export const AuditScreen = ({ data }: { data: MarketData }) => {
+export const AuditScreen = ({
+  data,
+  manualCount = 0,
+  onReset,
+}: {
+  data: MarketData;
+  manualCount?: number;
+  onReset?: () => void;
+}) => {
   const { portfolio, feed } = data;
   const { summary, positions } = portfolio;
   const invariants = checkInvariants(portfolio);
@@ -159,6 +168,22 @@ export const AuditScreen = ({ data }: { data: MarketData }) => {
           quote feed.
         </Text>
       </Card>
+
+      {/* Orders append to the ledger, so there has to be a way back to the
+          record the app shipped with. */}
+      <SectionHeader title="Orders placed in the app" aside={`${manualCount}`} />
+      <Card>
+        <Text style={styles.note}>
+          {manualCount === 0
+            ? 'None yet. Buy and sell from any position; orders fill at the last price and are written to this ledger, never sent to a broker.'
+            : `${manualCount} order${manualCount === 1 ? '' : 's'} ${manualCount === 1 ? 'is' : 'are'} included in every figure above. Clearing them returns the account to the record the app shipped with.`}
+        </Text>
+        {manualCount > 0 && onReset ? (
+          <Pressable style={styles.reset} onPress={onReset}>
+            <Text style={styles.resetText}>Clear in-app orders</Text>
+          </Pressable>
+        ) : null}
+      </Card>
     </ScrollView>
   );
 };
@@ -188,4 +213,12 @@ const styles = StyleSheet.create({
   fact: { width: '50%', paddingVertical: 9 },
   factLabel: { fontSize: 12, color: colors.textSecondary },
   factValue: { fontSize: 16, fontWeight: '600', color: colors.text, marginTop: 3 },
+  reset: {
+    marginTop: spacing.md,
+    alignItems: 'center',
+    paddingVertical: 13,
+    borderRadius: radius.control,
+    backgroundColor: colors.chip,
+  },
+  resetText: { fontSize: 14, fontWeight: '600', color: colors.loss },
 });

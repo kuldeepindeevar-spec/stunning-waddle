@@ -10,7 +10,8 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { colors, pnlColor, radius, spacing, tabular } from '../theme';
 import { money, price as fmtPrice, shares, shortDate, signedMoney } from '../lib/format';
 import { Card, Divider, SectionHeader } from '../components/primitives';
-import { INITIAL_CAPITAL, INCEPTION_DATE, TRADES } from '../data/ledger';
+import { INITIAL_CAPITAL, INCEPTION_DATE, TRADES, Trade } from '../data/ledger';
+import { isManual } from '../lib/orders';
 import { instrumentFor } from '../data/instruments';
 
 type Line = {
@@ -22,9 +23,17 @@ type Line = {
   gross: number;
   cashAfter: number;
   note: string;
+  /** True for orders placed in the app, false for the shipped record. */
+  manual: boolean;
 };
 
-export const ActivityScreen = ({ realizedPnl }: { realizedPnl: number }) => {
+export const ActivityScreen = ({
+  trades = TRADES,
+  realizedPnl,
+}: {
+  trades?: Trade[];
+  realizedPnl: number;
+}) => {
   const lines = useMemo<Line[]>(() => {
     const out: Line[] = [
       {
@@ -36,11 +45,12 @@ export const ActivityScreen = ({ realizedPnl }: { realizedPnl: number }) => {
         gross: INITIAL_CAPITAL,
         cashAfter: INITIAL_CAPITAL,
         note: 'The only external cash movement in the account’s history.',
+        manual: false,
       },
     ];
 
     let cash = INITIAL_CAPITAL;
-    for (const trade of TRADES) {
+    for (const trade of trades) {
       const gross = trade.quantity * trade.price;
       cash += trade.side === 'BUY' ? -gross : gross;
       out.push({
@@ -52,12 +62,14 @@ export const ActivityScreen = ({ realizedPnl }: { realizedPnl: number }) => {
         gross: trade.side === 'BUY' ? -gross : gross,
         cashAfter: cash,
         note: trade.note,
+        manual: isManual(trade),
       });
     }
     return out.reverse();
-  }, []);
+  }, [trades]);
 
-  const buys = TRADES.filter((t) => t.side === 'BUY').length;
+  const buys = trades.filter((t) => t.side === 'BUY').length;
+  const manualCount = trades.filter(isManual).length;
 
   const tagStyle = (side: Line['side']) =>
     side === 'SELL'
@@ -68,10 +80,11 @@ export const ActivityScreen = ({ realizedPnl }: { realizedPnl: number }) => {
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={{ paddingBottom: spacing.xxl }}>
-      <SectionHeader title="Statement" aside={`${buys} buys · ${TRADES.length - buys} sells`} />
+      <SectionHeader title="Statement" aside={`${buys} buys · ${trades.length - buys} sells`} />
       <Card>
         <Text style={styles.summary}>
-          {TRADES.length} fills since {shortDate(INCEPTION_DATE)}. Realised P&L across all closed
+          {trades.length} fills since {shortDate(INCEPTION_DATE)}
+          {manualCount > 0 ? `, ${manualCount} placed in the app` : ''}. Realised P&L across all closed
           share lots is{' '}
           <Text style={{ color: pnlColor(realizedPnl) }}>{signedMoney(realizedPnl)}</Text>, which
           stayed in the account and funded later buys.
@@ -92,6 +105,7 @@ export const ActivityScreen = ({ realizedPnl }: { realizedPnl: number }) => {
                     </Text>
                     <Text style={styles.symbol}>{line.symbol}</Text>
                     <Text style={styles.date}>{shortDate(line.date)}</Text>
+                    {line.manual ? <Text style={styles.manualTag}>IN-APP</Text> : null}
                   </View>
                   <Text style={[styles.detail, tabular]}>
                     {line.detail}
@@ -131,6 +145,17 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   symbol: { fontSize: 15, fontWeight: '700', color: colors.text },
+  manualTag: {
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 0.4,
+    color: colors.brand,
+    backgroundColor: colors.brandWash,
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
   date: { fontSize: 11, color: colors.textTertiary },
   detail: { fontSize: 13, color: colors.textSecondary, marginTop: 4 },
   note: { fontSize: 11, color: colors.textTertiary, marginTop: 4, lineHeight: 15 },

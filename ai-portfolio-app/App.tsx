@@ -18,6 +18,9 @@ import { ActivityScreen } from './src/screens/ActivityScreen';
 import { AuditScreen } from './src/screens/AuditScreen';
 import { WatchlistScreen } from './src/screens/WatchlistScreen';
 import { useMarketData } from './src/hooks/useMarketData';
+import { useLedger } from './src/hooks/useLedger';
+import { OrderTicket } from './src/components/OrderTicket';
+import type { OrderSide } from './src/lib/orders';
 
 const TITLES: Record<TabKey, string> = {
   portfolio: 'Portfolio',
@@ -28,11 +31,13 @@ const TITLES: Record<TabKey, string> = {
 
 const Shell = () => {
   const insets = useSafeAreaInsets();
-  const data = useMarketData();
+  const ledger = useLedger();
+  const data = useMarketData(ledger.trades);
   const [tab, setTab] = useState<TabKey>('portfolio');
   const [selected, setSelected] = useState<string | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState('');
+  const [ticketSymbol, setTicketSymbol] = useState<string | null>(null);
 
   const toggleSearch = () => {
     setSearchOpen((open) => {
@@ -79,18 +84,34 @@ const Shell = () => {
           <PositionDetailScreen
             symbol={selected}
             portfolio={data.portfolio}
+            quotes={data.feed.quotes}
             onBack={() => setSelected(null)}
+            onTrade={() => setTicketSymbol(selected)}
           />
         ) : tab === 'portfolio' ? (
           <PortfolioScreen data={data} query={query} onSelect={setSelected} />
         ) : tab === 'watchlist' ? (
           <WatchlistScreen data={data} query={query} onSelect={setSelected} />
         ) : tab === 'activity' ? (
-          <ActivityScreen realizedPnl={data.portfolio.summary.realizedPnl} />
+          <ActivityScreen trades={ledger.trades} realizedPnl={data.portfolio.summary.realizedPnl} />
         ) : (
-          <AuditScreen data={data} />
+          <AuditScreen data={data} manualCount={ledger.manualCount} onReset={ledger.reset} />
         )}
       </View>
+
+      <OrderTicket
+        symbol={ticketSymbol}
+        trades={ledger.trades}
+        quotes={data.feed.quotes}
+        onClose={() => setTicketSymbol(null)}
+        onSubmit={(side: OrderSide, quantity: number) =>
+          ledger.placeOrder(data.feed.quotes, {
+            symbol: ticketSymbol as string,
+            side,
+            quantity,
+          })
+        }
+      />
 
       <TabBar
         active={tab}

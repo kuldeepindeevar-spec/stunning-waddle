@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
 
-import { TRADES } from '../data/ledger';
+import { TRADES, Trade } from '../data/ledger';
 import { buildPortfolio, Portfolio } from '../lib/portfolio';
 import { fetchQuotes, snapshotQuotes, QuoteFetchResult } from '../lib/quotes';
 import {
@@ -19,16 +19,12 @@ import {
 /** How often the quote feed is polled while the app is in the foreground. */
 export const REFRESH_INTERVAL_MS = 20_000;
 
-const openSymbols = (): string[] => {
-  const held = new Map<string, number>();
-  for (const trade of TRADES) {
-    const delta = trade.side === 'BUY' ? trade.quantity : -trade.quantity;
-    held.set(trade.symbol, (held.get(trade.symbol) ?? 0) + delta);
-  }
-  return [...held.entries()].filter(([, qty]) => qty > 0).map(([symbol]) => symbol);
-};
-
-export const SYMBOLS = openSymbols();
+/**
+ * Every symbol the account has ever traded, not just the ones currently held.
+ * Selling a line to zero must not stop its quote, or the position could never
+ * be re-opened from the watchlist.
+ */
+export const SYMBOLS = [...new Set(TRADES.map((trade) => trade.symbol))];
 
 export type MarketData = {
   portfolio: Portfolio;
@@ -39,7 +35,7 @@ export type MarketData = {
   refresh: () => void;
 };
 
-export function useMarketData(): MarketData {
+export function useMarketData(trades: Trade[] = TRADES): MarketData {
   const [feed, setFeed] = useState<QuoteFetchResult>(() => snapshotQuotes(SYMBOLS));
   const [curve, setCurve] = useState<EquityCurve>(() =>
     buildModelledCurve(snapshotQuotes(SYMBOLS).quotes),
@@ -96,7 +92,7 @@ export function useMarketData(): MarketData {
     return () => subscription.remove();
   }, [refresh]);
 
-  const portfolio = buildPortfolio(feed.quotes, { staleSymbols: feed.staleSymbols });
+  const portfolio = buildPortfolio(feed.quotes, { staleSymbols: feed.staleSymbols, trades });
 
   return { portfolio, curve, feed, refreshing, lastUpdated, refresh: () => void refresh() };
 }

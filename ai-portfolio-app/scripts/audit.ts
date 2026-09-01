@@ -11,6 +11,7 @@ import { RETURN_BAND, SNAPSHOT, SNAPSHOT_AS_OF } from '../src/data/snapshot';
 import { buildPortfolio, checkInvariants, replayLedger } from '../src/lib/portfolio';
 import { scaleQuotes, solveBallast } from '../src/lib/calibration';
 import { buildModelledCurve, monthEnds } from '../src/lib/history';
+import { applyOrder, checkOrder, isManual, nextOrderId } from '../src/lib/orders';
 
 const usd = (n: number) =>
   n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 });
@@ -155,6 +156,84 @@ console.log(
   `  Band ceiling (${RETURN_BAND.max}%)        ${usd(bandHighNlv).padStart(18)}` +
     `   ${(((bandHighNlv - summary.netLiquidation) / summary.netLiquidation) * 100).toFixed(2)}% move`,
 );
+
+// ------------------------------------------------------------ order entry
+// Orders append to the ledger, so they are the one thing that can break the
+// identities at runtime. Prove the guard holds: what it accepts keeps every
+// identity true, and what it rejects is exactly what would have broken them.
+console.log('\nORDER ENTRY');
+{
+  const held = (trades: typeof TRADES, symbol: string) =>
+    replayLedger(trades).lots.find((l) => l.symbol === symbol)?.quantity ?? 0;
+  const cashOf = (trades: typeof TRADES) => replayLedger(trades).cash;
+
+  // A buy for every share the cash can cover, then a sell of the whole line.
+  const maxBuy = checkOrder(TRADES, SNAPSHOT, { symbol: 'PYPL', side: 'BUY', quantity: 1 });
+  const bought = applyOrder(TRADES, SNAPSHOT, {
+    symbol: 'PYPL',
+    side: 'BUY',
+    quantity: maxBuy.maxQuantity,
+  });
+  check(
+    cashOf(bought) >= -1e-9,
+    'A max-size buy leaves cash non-negative',
+    `${maxBuy.maxQuantity} PYPL, cash ${usd(cashOf(bought))}`,
+  );
+
+  const sold = applyOrder(bought, SNAPSHOT, {
+    symbol: 'NVDA',
+    side: 'SELL',
+    quantity: held(bought, 'NVDA'),
+  });
+  check(held(sold, 'NVDA') === 0, 'Selling the whole line closes it', '0 NVDA held');
+
+  const after = buildPortfolio(SNAPSHOT, { trades: sold, asOf });
+  const brokenAfterOrders = checkInvariants(after, sold).filter((i) => !i.passed);
+  check(
+    brokenAfterOrders.length === 0,
+    'Every identity still holds after orders',
+    brokenAfterOrders.map((i) => i.name).join(',') || 'all 10 hold',
+  );
+  check(
+    replayLedger(sold).minimumCash >= -1e-9,
+    'Cash is never negative across the extended ledger',
+    usd(replayLedger(sold).minimumCash),
+  );
+
+  // The guard has to refuse what would break those identities.
+  const rejects: [string, () => void][] = [
+    ['a buy beyond settled cash', () =>
+      applyOrder(TRADES, SNAPSHOT, { symbol: 'NVDA', side: 'BUY', quantity: 1_000_000 })],
+    ['a sell beyond shares held', () =>
+      applyOrder(TRADES, SNAPSHOT, { symbol: 'NVDA', side: 'SELL', quantity: 999_999 })],
+    ['a fractional quantity', () =>
+      applyOrder(TRADES, SNAPSHOT, { symbol: 'NVDA', side: 'BUY', quantity: 1.5 })],
+    ['a zero quantity', () =>
+      applyOrder(TRADES, SNAPSHOT, { symbol: 'NVDA', side: 'BUY', quantity: 0 })],
+    ['a symbol with no price', () =>
+      applyOrder(TRADES, SNAPSHOT, { symbol: 'ZZZZ', side: 'BUY', quantity: 1 })],
+  ];
+  for (const [label, attempt] of rejects) {
+    let refused = false;
+    try {
+      attempt();
+    } catch {
+      refused = true;
+    }
+    check(refused, `Rejects ${label}`);
+  }
+
+  check(
+    nextOrderId(TRADES) === 'M001' && nextOrderId(sold).startsWith('M'),
+    'Manual rows get their own id series',
+    `${nextOrderId(TRADES)} then ${nextOrderId(sold)}`,
+  );
+  check(
+    sold.filter(isManual).length === 2 && sold.filter((t) => !isManual(t)).length === TRADES.length,
+    'The shipped ledger is never mutated',
+    `${TRADES.length} shipped + 2 manual`,
+  );
+}
 
 // ------------------------------------------------------------ equity curve
 console.log('\nEQUITY CURVE');

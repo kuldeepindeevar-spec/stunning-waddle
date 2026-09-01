@@ -278,6 +278,109 @@ const backOk = await page.evaluate(() =>
   (document.getElementById('sheet')!.textContent ?? '').includes('Total Assets'));
 check(backOk, 'Back returns to the portfolio');
 
+// Orders are the one thing that mutates the ledger at runtime, so drive a real
+// one through the UI and check the account actually moved by the right amount.
+console.log('\nORDER ENTRY');
+await page.getByText('Portfolio', { exact: true }).last().click();
+await page.waitForTimeout(300);
+await page.getByText('NVDA', { exact: true }).last().click();
+await page.waitForTimeout(400);
+
+const before = await page.evaluate(() => {
+  const g = (window as any).PORTFOLIO;
+  const pf = g.portfolio();
+  return {
+    qty: pf.positions.find((p: any) => p.sym === 'NVDA').qty,
+    cash: pf.summary.cash,
+    rows: g.WORKING.length,
+  };
+});
+
+await page.getByText('Buy', { exact: true }).first().click();
+await page.waitForTimeout(400);
+const ticketOpen = await page.evaluate(
+  () => document.getElementById('ticket')?.classList.contains('on') ?? false,
+);
+check(ticketOpen, 'Order ticket opens from the position');
+
+// Type a size, then submit through the button a person would tap.
+await page.fill('#qtyInput', '3');
+await page.waitForTimeout(250);
+await page.click('#submit');
+await page.waitForTimeout(500);
+
+const after = await page.evaluate(() => {
+  const g = (window as any).PORTFOLIO;
+  const pf = g.portfolio();
+  const price = g.SNAPSHOT.NVDA.price;
+  return {
+    qty: pf.positions.find((p: any) => p.sym === 'NVDA').qty,
+    cash: pf.summary.cash,
+    rows: g.WORKING.length,
+    manual: g.MANUAL.length,
+    price,
+    broken: g.checkInvariants(pf).filter((i: any) => !i.passed).map((i: any) => i.name),
+    closed: !document.getElementById('ticket')?.classList.contains('on'),
+  };
+});
+
+check(after.qty === before.qty + 3, 'Buying 3 adds 3 shares', `${before.qty} -> ${after.qty}`);
+check(
+  Math.abs(after.cash - (before.cash - 3 * after.price)) < 0.01,
+  'Cash falls by exactly quantity x price',
+  `${before.cash.toFixed(2)} -> ${after.cash.toFixed(2)}`,
+);
+check(after.rows === before.rows + 1, 'One row is appended to the ledger', `${after.rows} rows`);
+check(after.manual === 1, 'The order is recorded as an in-app row');
+check(after.broken.length === 0, 'Every identity still holds', after.broken.join(',') || 'all hold');
+check(after.closed, 'The ticket closes on a filled order');
+
+// It has to refuse what would overdraw the account.
+await page.getByText('Buy', { exact: true }).first().click();
+await page.waitForTimeout(300);
+await page.fill('#qtyInput', '999999');
+await page.waitForTimeout(300);
+const refused = await page.evaluate(() => {
+  const submit = document.getElementById('submit');
+  const err = document.querySelector('#ticket .err');
+  return { disabled: submit?.classList.contains('off') ?? false, message: err?.textContent ?? '' };
+});
+check(refused.disabled, 'An unaffordable size disables the button');
+check(/Not enough cash/.test(refused.message), 'It says why', refused.message.slice(0, 48));
+
+// The sheet can cover the whole viewport, so it needs a dismiss of its own.
+await page.click('#ticketClose');
+await page.waitForTimeout(300);
+const dismissed = await page.evaluate(
+  () => !document.getElementById('ticket')?.classList.contains('on'),
+);
+check(dismissed, 'The ticket can be closed without placing an order');
+
+// The statement has to show it, and clearing has to restore the shipped book.
+await page.getByText('Activity', { exact: true }).last().click();
+await page.waitForTimeout(400);
+const tagged = await page.evaluate(() =>
+  (document.getElementById('sheet')?.innerText ?? '').includes('IN-APP'));
+check(tagged, 'The statement marks it as an in-app order');
+
+await page.getByText('Reports', { exact: true }).last().click();
+await page.waitForTimeout(400);
+await page.click('#reset');
+await page.waitForTimeout(400);
+const cleared = await page.evaluate(() => {
+  const g = (window as any).PORTFOLIO;
+  return {
+    rows: g.WORKING.length,
+    manual: g.MANUAL.length,
+    qty: g.portfolio().positions.find((p: any) => p.sym === 'NVDA').qty,
+  };
+});
+check(
+  cleared.rows === TRADES.length && cleared.manual === 0 && cleared.qty === before.qty,
+  'Clearing restores the shipped ledger exactly',
+  `${cleared.rows} rows, ${cleared.qty} NVDA`,
+);
+
 if (shotDir) {
   mkdirSync(shotDir, { recursive: true });
   for (const tab of ['Portfolio', 'Watchlist', 'Activity', 'Reports']) {

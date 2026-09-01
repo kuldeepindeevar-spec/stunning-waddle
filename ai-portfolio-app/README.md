@@ -80,6 +80,33 @@ cycle became explicit: Vertiv in February, Palantir in May, Robinhood in July, N
 the day Nasdaq resumed trading in it, CoreWeave at the IPO price in 2025. Three of those
 later positions have not worked.
 
+## Buying and selling
+
+Any position opens an order ticket from Buy or Sell. Orders are **market orders filled
+at the last price** — there is no limit order, because nothing here runs while the app is
+closed and an order that could never fill would be a control that lies about what it
+does. Nothing is routed to a broker and no real money moves; the ticket says so.
+
+An order does not adjust a stored balance. It **appends a row to the ledger**, and every
+figure re-derives from the longer ledger on the next render — which is the whole reason
+the app can still reconcile afterwards. Two rules are enforced before a row is ever
+appended, because they are the same invariants the Reports tab asserts:
+
+- a buy can never spend more than the settled cash on hand;
+- a sell can never exceed the shares actually held.
+
+The available balance, the `Max` button and the accept/reject decision all come from one
+call to `checkOrder()`, so the ticket cannot offer a size the ledger would refuse.
+
+In-app orders are tagged `IN-APP` in the statement, persist on the device, and can be
+cleared from **Reports → Orders placed in the app**, which returns the account to the
+record the app shipped with. The shipped ledger is never mutated.
+
+`npm run audit` proves the guard both ways — that what it accepts keeps all ten
+identities true, and that what it rejects is exactly what would have broken them — and
+`npm run verify:html` drives a real order through the UI and checks the account moved by
+exactly quantity x price.
+
 ## Live pricing
 
 Quotes come from the public Yahoo Finance chart endpoint — no API key, no account.
@@ -111,6 +138,8 @@ src/
   lib/quotes.ts         live quotes with per-symbol fallback
   lib/history.ts        equity curve, marked or modelled
   lib/calibration.ts    re-centring solver
+  lib/orders.ts         order validation and ledger append
+  hooks/useLedger       shipped rows + in-app orders, persisted on device
   hooks/useMarketData   polling, foreground re-mark, feed health
   screens/              Portfolio · Watchlist · Activity · Reports · position detail
 scripts/

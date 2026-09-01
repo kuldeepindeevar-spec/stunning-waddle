@@ -12,26 +12,75 @@ import { money, price as fmtPrice, shares, shortDate, signedMoney, signedPct, pc
 import { Card, Divider, KeyValue, Label, SectionHeader } from '../components/primitives';
 import { instrumentFor } from '../data/instruments';
 import { TRADES } from '../data/ledger';
-import type { Portfolio } from '../lib/portfolio';
+import type { Portfolio, QuoteMap } from '../lib/portfolio';
+
+/** Buy and Sell, pinned under the header so they are reachable on any scroll. */
+const TradeBar = ({ onTrade }: { onTrade: () => void }) => (
+  <View style={styles.tradeBar}>
+    <Pressable style={[styles.tradeBtn, { backgroundColor: colors.gainFill }]} onPress={onTrade}>
+      <Text style={styles.tradeText}>Buy</Text>
+    </Pressable>
+    <Pressable style={[styles.tradeBtn, { backgroundColor: colors.lossFill }]} onPress={onTrade}>
+      <Text style={styles.tradeText}>Sell</Text>
+    </Pressable>
+  </View>
+);
 
 export const PositionDetailScreen = ({
   symbol,
   portfolio,
+  quotes,
   onBack,
+  onTrade,
 }: {
   symbol: string;
   portfolio: Portfolio;
+  quotes: QuoteMap;
   onBack: () => void;
+  onTrade: () => void;
 }) => {
   const position = portfolio.positions.find((p) => p.symbol === symbol);
   const instrument = instrumentFor(symbol);
   const trades = TRADES.filter((trade) => trade.symbol === symbol);
+  const quote = quotes[symbol];
 
+  // A line sold down to zero still has a price and can still be re-opened, so
+  // the screen stays usable rather than turning into a dead end.
   if (!position) {
+    const dayChange = quote ? quote.price - quote.previousClose : 0;
     return (
-      <View style={styles.screen}>
-        <Text style={styles.missing}>No open position in {symbol}.</Text>
-      </View>
+      <ScrollView style={styles.screen} contentContainerStyle={{ paddingBottom: spacing.xxl }}>
+        <Pressable onPress={onBack} style={styles.back}>
+          <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+            <Path d="M15 5l-7 7 7 7" stroke={colors.textSecondary} strokeWidth={2.4} strokeLinecap="round" />
+          </Svg>
+          <Text style={styles.backText}>Portfolio</Text>
+        </Pressable>
+        <Card>
+          <Text style={styles.symbol}>{symbol}</Text>
+          <Text style={styles.name}>{instrument.name}</Text>
+          <Text style={styles.venue}>
+            {instrument.exchange} · {instrument.currency} · {instrument.sector}
+          </Text>
+          {quote ? (
+            <>
+              <Text style={[styles.last, { color: pnlColor(dayChange) }, tabular]}>
+                {fmtPrice(quote.price)}
+              </Text>
+              <Text style={[styles.dayLine, { color: pnlColor(dayChange) }, tabular]}>
+                {signedMoney(dayChange)} today
+              </Text>
+            </>
+          ) : null}
+        </Card>
+        <TradeBar onTrade={onTrade} />
+        <Card>
+          <Text style={styles.thesis}>
+            No open position. {trades.length} historic{' '}
+            {trades.length === 1 ? 'trade' : 'trades'} in this name.
+          </Text>
+        </Card>
+      </ScrollView>
     );
   }
 
@@ -58,6 +107,8 @@ export const PositionDetailScreen = ({
           {signedMoney(position.dayChange)} ({signedPct(position.dayChangePct)}) today
         </Text>
       </Card>
+
+      <TradeBar onTrade={onTrade} />
 
       <Card>
         <Label>Thesis</Label>
@@ -138,6 +189,14 @@ export const PositionDetailScreen = ({
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
   missing: { color: colors.textSecondary, padding: spacing.lg },
+  tradeBar: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.md,
+  },
+  tradeBtn: { flex: 1, alignItems: 'center', paddingVertical: 14, borderRadius: 12 },
+  tradeText: { fontSize: 16, fontWeight: '700', color: '#fff' },
   back: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingBottom: spacing.sm },
   backText: { color: colors.textSecondary, fontSize: 15 },
   symbol: { fontSize: 24, fontWeight: '700', color: colors.text, letterSpacing: -0.4 },

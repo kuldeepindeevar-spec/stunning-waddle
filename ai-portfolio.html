@@ -376,6 +376,95 @@ body { -webkit-user-select: none; user-select: none; }
 #tabs svg { width: 23px; height: 23px; display: block; }
 #tabs .lab { font-size: 10px; font-weight: 600; }
 
+/* ------------------------------------------------------------ order ticket */
+#tradebar { display: flex; gap: 12px; margin: 0 16px 12px; }
+#tradebar .b {
+  flex: 1; text-align: center; padding: 14px; border-radius: 12px;
+  font-size: 16px; font-weight: 700; color: #fff;
+}
+#tradebar .buy { background: var(--up-fill); }
+#tradebar .sell { background: var(--down-fill); }
+#tradebar .b:active { opacity: 0.8; }
+
+#scrim {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+  opacity: 0; pointer-events: none; transition: opacity 0.18s ease; z-index: 40;
+}
+#scrim.on { opacity: 1; pointer-events: auto; }
+
+#ticket {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
+  background: var(--card);
+  border-radius: 20px 20px 0 0;
+  padding: 8px 16px calc(var(--safe-bottom) + 24px);
+  transform: translateY(100%); transition: transform 0.22s ease;
+  max-height: 92%; overflow-y: auto; -webkit-overflow-scrolling: touch;
+}
+#ticket.on { transform: translateY(0); }
+#ticket .grab {
+  width: 36px; height: 4px; border-radius: 2px; background: var(--divider);
+  margin: 0 auto 12px;
+}
+/* An explicit dismiss: the sheet is tall enough to cover the scrim, so
+   tapping outside it is not a reliable way out on a phone. */
+#ticket .bar {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 6px;
+}
+#ticket .bar .t { font-size: 13px; color: var(--text-2); }
+#ticketClose {
+  width: 34px; height: 34px; margin-right: -8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; color: var(--text-2);
+}
+#ticket .head { display: flex; align-items: flex-start; gap: 12px; }
+#ticket .head .sym { font-size: 22px; font-weight: 700; }
+#ticket .head .nm { font-size: 13px; color: var(--text-2); margin-top: 2px; }
+#ticket .head .r { text-align: right; margin-left: auto; }
+#ticket .head .lastv { font-size: 20px; font-weight: 700; margin-top: 2px; }
+
+#sideRow { display: flex; gap: 8px; margin-top: 16px; }
+#sideRow .s {
+  flex: 1; text-align: center; padding: 12px; border-radius: 10px;
+  background: var(--chip); color: var(--text-2); font-size: 15px; font-weight: 700;
+}
+#sideRow .s.on { color: #fff; }
+#sideRow .s.on.buy { background: var(--up-fill); }
+#sideRow .s.on.sell { background: var(--down-fill); }
+
+#qtyRow { display: flex; align-items: center; gap: 8px; }
+#qtyRow .step {
+  width: 48px; height: 48px; border-radius: 10px; background: var(--chip);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; line-height: 1;
+}
+#qtyRow input {
+  flex: 1; height: 48px; border: none; border-radius: 10px; background: var(--chip);
+  color: var(--text); font-family: var(--sans); font-size: 18px; font-weight: 700;
+  text-align: center; outline: none; -webkit-appearance: none;
+  font-variant-numeric: tabular-nums;
+}
+#presets { display: flex; gap: 8px; margin-top: 8px; }
+#presets .p {
+  flex: 1; text-align: center; padding: 9px; border-radius: 9px;
+  background: var(--chip); color: var(--text-2); font-size: 13px; font-weight: 600;
+}
+#ticket .err { font-size: 12px; color: var(--down); margin-top: 8px; line-height: 17px; }
+#submit {
+  margin-top: 16px; text-align: center; padding: 15px; border-radius: 10px;
+  font-size: 16px; font-weight: 700; color: #fff;
+}
+#submit.off { background: var(--chip); color: var(--text-3); }
+#ticket .fine {
+  font-size: 11px; color: var(--text-3); line-height: 16px;
+  margin-top: 12px; text-align: center;
+}
+.tag.app { color: var(--brand); background: var(--brand-soft); }
+#reset {
+  margin-top: 12px; text-align: center; padding: 13px; border-radius: 10px;
+  background: var(--chip); color: var(--down); font-size: 14px; font-weight: 600;
+}
+
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
@@ -414,6 +503,9 @@ body { -webkit-user-select: none; user-select: none; }
 
   <div id="tabs"></div>
 </div>
+
+<div id="scrim"></div>
+<div id="ticket" role="dialog" aria-label="Order ticket"></div>
 
 <script>
 "use strict";
@@ -566,8 +658,8 @@ function replayLedger(trades) {
 }
 
 /** Value the replayed ledger against a quote map. */
-function buildPortfolio(quotes, staleSet, asOf) {
-  const { lots, cash, realizedPnl } = replayLedger(TRADES);
+function buildPortfolio(quotes, staleSet, asOf, trades) {
+  const { lots, cash, realizedPnl } = replayLedger(trades || WORKING);
   const open = lots.filter(l => l.qty > 0);
 
   const positions = open.map(lot => {
@@ -630,9 +722,9 @@ function buildPortfolio(quotes, staleSet, asOf) {
 const round2 = n => Math.round((n + Number.EPSILON) * 100) / 100;
 
 /** The accounting identities the whole app rests on. */
-function checkInvariants(pf) {
+function checkInvariants(pf, trades) {
   const { positions: ps, summary: s } = pf;
-  const replay = replayLedger(TRADES);
+  const replay = replayLedger(trades || WORKING);
   const sum = fn => ps.reduce((t, p) => t + fn(p), 0);
   const mk = (name, detail, expected, actual, tol) => ({
     name, detail, expected, actual,
@@ -676,10 +768,10 @@ function checkInvariants(pf) {
 /* --------------------------------------------------------- equity curve -- */
 
 /** Shares held and settled cash as at the end of the given date. */
-function holdingsAsOf(t) {
+function holdingsAsOf(t, trades) {
   const shares = {};
   let cash = INITIAL_CAPITAL;
-  for (const tr of TRADES) {
+  for (const tr of (trades || WORKING)) {
     if (Date.parse(tr.date + "T00:00:00Z") > t) break;
     const gross = tr.qty * tr.px;
     if (tr.side === "BUY") { shares[tr.sym] = (shares[tr.sym] || 0) + tr.qty; cash -= gross; }
@@ -710,9 +802,9 @@ function monthEnds(now) {
 }
 
 /** Per-symbol price anchors: every price the ledger transacted at, plus today. */
-function priceAnchors(quotes, now) {
+function priceAnchors(quotes, now, trades) {
   const anchors = {};
-  for (const t of TRADES) {
+  for (const t of (trades || WORKING)) {
     (anchors[t.sym] = anchors[t.sym] || []).push({ t: Date.parse(t.date + "T00:00:00Z"), px: t.px });
   }
   for (const sym in anchors) {
@@ -743,11 +835,11 @@ function priceAt(anchors, sym, t) {
  * Modelled curve. The endpoints are exact; the shape between them is an
  * approximation, and the chart labels itself as such.
  */
-function buildModelledCurve(quotes, now) {
-  const anchors = priceAnchors(quotes, now);
+function buildModelledCurve(quotes, now, trades) {
+  const anchors = priceAnchors(quotes, now, trades);
   const points = [];
   for (const t of monthEnds(now)) {
-    const { shares, cash } = holdingsAsOf(t);
+    const { shares, cash } = holdingsAsOf(t, trades);
     let value = cash;
     for (const sym in shares) {
       if (shares[sym] <= 0) continue;
@@ -757,6 +849,104 @@ function buildModelledCurve(quotes, now) {
     points.push({ t, value });
   }
   return { points, basis: "modelled" };
+}
+
+/* ==========================================================================
+   2b. ORDERS
+
+   An order is not a stored balance change — it appends a row to the ledger,
+   and every figure re-derives from the longer ledger on the next render. Two
+   rules are enforced before a row is appended, because they are the same
+   invariants the Reports tab asserts afterwards: a buy can never spend more
+   than the settled cash on hand, and a sell can never exceed the shares held.
+
+   Orders fill at the last price. There is no limit order, because nothing here
+   runs while the app is closed and an order that could never fill would be a
+   control that lies about what it does.
+   ========================================================================== */
+
+/** The shipped rows plus any orders placed in the app, in date order. */
+let WORKING = null;   // initialised once the loader below is defined
+
+const MANUAL_KEY = "portfolio.manualTrades.v1";
+const isManual = t => /^M\d+$/.test(t.id);
+
+const byDate = rows => rows.slice().sort((a, b) =>
+  a.date === b.date ? a.id.localeCompare(b.id) : a.date.localeCompare(b.date));
+
+function loadManual() {
+  try {
+    const raw = localStorage.getItem(MANUAL_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed.filter(isManual) : [];
+  } catch (e) { return []; }
+}
+function saveManual(rows) {
+  try { localStorage.setItem(MANUAL_KEY, JSON.stringify(rows)); } catch (e) {}
+}
+
+/** Ledger id for the next manually entered order. */
+function nextOrderId(trades) {
+  const used = trades.map(t => /^M(\d+)$/.exec(t.id)).filter(Boolean).map(m => Number(m[1]));
+  return "M" + String((used.length ? Math.max.apply(null, used) : 0) + 1).padStart(3, "0");
+}
+
+const todayIso = (now) => (now || new Date()).toISOString().slice(0, 10);
+
+/*
+ * Manual rows live here, and storage is only a side effect of changing them.
+ * If localStorage is unavailable — private mode, a file:// origin — orders
+ * still apply for the session instead of vanishing the moment they are placed.
+ */
+let MANUAL = loadManual();
+function setManual(rows) { MANUAL = rows; saveManual(rows); return rebuildWorking(); }
+function rebuildWorking() { WORKING = byDate(TRADES.concat(MANUAL)); return WORKING; }
+rebuildWorking();
+
+/**
+ * Validate a draft against the ledger and marks. Returns the limits as well as
+ * the verdict, so the ticket renders "Max" and the available balance from the
+ * same computation that decides whether to accept.
+ */
+function checkOrder(trades, quotes, draft) {
+  const quote = quotes[draft.sym];
+  const replay = replayLedger(trades);
+  const lot = replay.lots.find(l => l.sym === draft.sym);
+  const held = lot ? lot.qty : 0;
+  const cash = replay.cash;
+
+  if (!quote) return { max: 0, cash, held, value: 0, valid: false, reason: "No price for this symbol." };
+
+  const price = quote.price;
+  const max = draft.side === "BUY" ? Math.max(0, Math.floor(cash / price)) : held;
+  const value = draft.qty * price;
+
+  if (!Number.isInteger(draft.qty) || draft.qty <= 0)
+    return { max, cash, held, value, valid: false, reason: "Enter a whole number of shares." };
+  if (draft.side === "BUY" && value > cash + 1e-9)
+    return { max, cash, held, value, valid: false,
+      reason: "Not enough cash. " + max + " share" + (max === 1 ? "" : "s") + " is the most you can buy." };
+  if (draft.side === "SELL" && draft.qty > held)
+    return { max, cash, held, value, valid: false,
+      reason: held === 0 ? "You do not hold this position."
+                         : "You hold " + held + " share" + (held === 1 ? "" : "s") + "." };
+
+  return { max, cash, held, value, valid: true };
+}
+
+/** Append the order. Returns a new array; the shipped ledger is never mutated. */
+function applyOrder(trades, quotes, draft, now) {
+  const check = checkOrder(trades, quotes, draft);
+  if (!check.valid) throw new Error(check.reason || "Order rejected.");
+  return trades.concat([{
+    id: nextOrderId(trades),
+    date: todayIso(now),
+    side: draft.side,
+    sym: draft.sym,
+    qty: draft.qty,
+    px: quotes[draft.sym].price,
+    note: "Order placed in the app and recorded in this ledger."
+  }]);
 }
 
 /* ==========================================================================
@@ -771,11 +961,12 @@ function buildModelledCurve(quotes, now) {
    Set your own relay under Audit > Data source to avoid the public ones.
    ========================================================================== */
 
-const SYMBOLS = (() => {
-  const held = new Map();
-  for (const t of TRADES) held.set(t.sym, (held.get(t.sym) || 0) + (t.side === "BUY" ? t.qty : -t.qty));
-  return Array.from(held.entries()).filter(e => e[1] > 0).map(e => e[0]);
-})();
+/*
+ * Every symbol the account has ever traded, not just the ones currently held.
+ * Selling a line to zero must not stop its quote, or the position could never
+ * be re-opened.
+ */
+const SYMBOLS = Array.from(new Set(TRADES.map(t => t.sym)));
 
 const store = {
   get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } },
@@ -905,12 +1096,13 @@ const state = {
   sort: { key: "mv", dir: -1 },
   wsort: { key: "chg", dir: -1 },
   query: "",
-  acctOpen: true
+  acctOpen: true,
+  ticket: null            // { sym, side, qty, error }
 };
 state.curve = buildModelledCurve(state.feed.quotes, Date.now());
 
 function portfolio() {
-  return buildPortfolio(state.feed.quotes, state.feed.stale);
+  return buildPortfolio(state.feed.quotes, state.feed.stale, undefined, WORKING);
 }
 
 /* ==========================================================================
@@ -1226,28 +1418,32 @@ function viewWatchlist() {
 /* --------------------------------------------------------------- activity */
 function viewActivity() {
   const s = portfolio().summary;
-  const buys = TRADES.filter(t => t.side === "BUY").length;
+  const rows = WORKING;
+  const buys = rows.filter(t => t.side === "BUY").length;
+  const manualCount = rows.filter(isManual).length;
 
   const lines = [{
     key: "deposit", date: INCEPTION_DATE, side: "DEPOSIT", sym: "USD",
     detail: "Account funded", gross: INITIAL_CAPITAL, cashAfter: INITIAL_CAPITAL,
-    note: "The only external cash movement in the account’s history."
+    note: "The only external cash movement in the account’s history.", manual: false
   }];
   let cash = INITIAL_CAPITAL;
-  for (const t of TRADES) {
+  for (const t of rows) {
     const gross = t.qty * t.px;
     cash += t.side === "BUY" ? -gross : gross;
     lines.push({
       key: t.id, date: t.date, side: t.side, sym: t.sym,
       detail: qty(t.qty) + " @ " + px(t.px),
-      gross: t.side === "BUY" ? -gross : gross, cashAfter: cash, note: t.note
+      gross: t.side === "BUY" ? -gross : gross, cashAfter: cash, note: t.note,
+      manual: isManual(t)
     });
   }
   lines.reverse();
 
-  let h = sechead("Statement", buys + " buys · " + (TRADES.length - buys) + " sells");
+  let h = sechead("Statement", buys + " buys · " + (rows.length - buys) + " sells");
   h += '<div class="card"><div class="pad" style="font-size:13px;line-height:19px;color:var(--text-2)">' +
-    TRADES.length + " fills since " + shortDate(INCEPTION_DATE) +
+    rows.length + " fills since " + shortDate(INCEPTION_DATE) +
+    (manualCount ? ", " + manualCount + " placed in the app" : "") +
     ". Realised P&amp;L across all closed share lots is " +
     '<span class="' + tone(s.realizedPnl) + '">' + sMoney(s.realizedPnl) + "</span>" +
     ", which stayed in the account and funded later buys.</div></div>";
@@ -1258,7 +1454,8 @@ function viewActivity() {
     const inst = INSTRUMENTS[l.sym];
     h += '<div class="act"><div class="l">' +
       '<div class="top"><span class="tag ' + cls + '">' + l.side + "</span>" +
-      '<span class="sym">' + l.sym + '</span><span class="dt">' + shortDate(l.date) + "</span></div>" +
+      '<span class="sym">' + l.sym + '</span><span class="dt">' + shortDate(l.date) + "</span>" +
+      (l.manual ? '<span class="tag app">IN-APP</span>' : "") + "</div>" +
       '<div class="det num">' + esc(l.detail) + (inst ? " · " + esc(inst.name) : "") + "</div>" +
       '<div class="why">' + esc(l.note) + "</div></div>" +
       '<div class="r"><div class="g num ' + tone(l.gross) + '">' + sMoney(l.gross) + "</div>" +
@@ -1349,10 +1546,26 @@ function viewAudit() {
     fact("CAGR", pct(s.cagrPct, 1)) +
     fact("Growth", s.growth.toFixed(2) + "x") + "</div>" +
     '<div class="note in">Positions, cost basis, realised P&amp;L and cash are replayed from the ' +
-    TRADES.length + "-row ledger on every render using average-cost accounting. No total is stored " +
+    WORKING.length + "-row ledger on every render using average-cost accounting. No total is stored " +
     "anywhere, so no two figures in the app can disagree. The ledger is the account’s own " +
     "transaction record, shipped with the app; prices are the only external input and come from " +
     "the live quote feed.</div></div></div>";
+
+  // Orders append to the ledger, so there has to be a way back to the record
+  // the app shipped with.
+  const manualCount = WORKING.filter(isManual).length;
+  h += sechead("Orders placed in the app", String(manualCount));
+  h += '<div class="card"><div class="pad">' +
+    '<div class="note in" style="padding-top:0">' +
+    (manualCount === 0
+      ? "None yet. Buy and sell from any position; orders fill at the last price and are " +
+        "written to this ledger, never sent to a broker."
+      : manualCount + " order" + (manualCount === 1 ? "" : "s") + " " +
+        (manualCount === 1 ? "is" : "are") + " included in every figure above. Clearing them " +
+        "returns the account to the record the app shipped with.") +
+    "</div>" +
+    (manualCount ? '<div id="reset">Clear in-app orders</div>' : "") +
+    "</div></div>";
 
   h += sechead("Data source");
   h += '<div class="card"><div class="pad">' +
@@ -1396,6 +1609,9 @@ function viewDetail(sym) {
     '<div class="dl num ' + dc + '">' + sMoney(p.dayChange) + " (" + sPct(p.dayChangePct) +
     ") today</div></div></div></div>";
 
+  h += '<div id="tradebar"><div class="b buy" data-trade="BUY">Buy</div>' +
+    '<div class="b sell" data-trade="SELL">Sell</div></div>';
+
   h += '<div class="card"><div class="pad" style="font-size:13px;line-height:19px;color:var(--text-2)">' +
     '<div class="lbl" style="margin-bottom:6px">Thesis</div>' + esc(inst.thesis) + "</div></div>";
 
@@ -1425,7 +1641,7 @@ function viewDetail(sym) {
     sMoney(p.unrealized) + " ÷ " + money(p.cost) + " = " +
     '<span class="' + pc + '">' + sPct(p.unrealizedPct) + "</span></div></div></div>";
 
-  const trades = TRADES.filter(t => t.sym === sym);
+  const trades = WORKING.filter(t => t.sym === sym);
   h += sechead("Trades (" + trades.length + ")");
   h += '<div class="card flush">';
   trades.forEach((t, i) => {
@@ -1440,6 +1656,138 @@ function viewDetail(sym) {
   h += "</div>";
   return h;
 }
+
+/* ------------------------------------------------------------ order ticket */
+
+function openTicket(sym, side) {
+  state.ticket = { sym: sym, side: side || "BUY", qty: 1, error: null };
+  renderTicket();
+}
+function closeTicket() {
+  state.ticket = null;
+  renderTicket();
+}
+
+function renderTicket() {
+  const el = document.getElementById("ticket");
+  const scrim = document.getElementById("scrim");
+  const t = state.ticket;
+
+  if (!t) {
+    el.classList.remove("on");
+    scrim.classList.remove("on");
+    return;
+  }
+
+  const inst = INSTRUMENTS[t.sym] || { name: t.sym };
+  const quote = state.feed.quotes[t.sym];
+  const check = checkOrder(WORKING, state.feed.quotes, { sym: t.sym, side: t.side, qty: t.qty });
+  const tint = t.side === "BUY" ? "var(--up-fill)" : "var(--down-fill)";
+
+  let h = '<div class="grab"></div>' +
+    '<div class="bar"><span class="t">Order</span><span id="ticketClose">✕</span></div>' +
+    '<div class="head"><div><div class="sym">' + t.sym + "</div>" +
+    '<div class="nm">' + esc(inst.name) + "</div></div>" +
+    '<div class="r"><div class="lbl">Last</div>' +
+    '<div class="lastv num">' + (quote ? px(quote.price) : "—") + "</div></div></div>";
+
+  h += '<div id="sideRow">' +
+    '<div class="s buy' + (t.side === "BUY" ? " on" : "") + '" data-side="BUY">Buy</div>' +
+    '<div class="s sell' + (t.side === "SELL" ? " on" : "") + '" data-side="SELL">Sell</div></div>';
+
+  h += '<div class="lbl" style="margin:16px 0 8px">Quantity</div>' +
+    '<div id="qtyRow"><div class="step" data-step="-1">−</div>' +
+    '<input id="qtyInput" type="text" inputmode="numeric" value="' + t.qty + '">' +
+    '<div class="step" data-step="1">+</div></div>';
+
+  h += '<div id="presets">' +
+    [["25%", 0.25], ["50%", 0.5], ["75%", 0.75], ["Max", 1]].map(function (pair) {
+      return '<div class="p" data-frac="' + pair[1] + '">' + pair[0] + "</div>";
+    }).join("") + "</div>";
+
+  h += '<div style="margin-top:16px">' +
+    '<div class="kv"><span class="k">Order value</span>' +
+    '<span class="v num">' + money(check.value) + "</span></div>" +
+    '<div class="kv"><span class="k">' +
+    (t.side === "BUY" ? "Available cash" : "Shares held") + "</span>" +
+    '<span class="v num' + (check.valid ? "" : " down") + '">' +
+    (t.side === "BUY" ? money(check.cash) : qty(check.held)) + "</span></div></div>";
+
+  const message = t.error || (!check.valid && t.qty > 0 ? check.reason : null);
+  if (message) h += '<div class="err">' + esc(message) + "</div>";
+
+  h += '<div id="submit" class="' + (check.valid ? "" : "off") + '"' +
+    (check.valid ? ' style="background:' + tint + '"' : "") + ">" +
+    (t.side === "BUY" ? "Buy" : "Sell") + (t.qty > 0 ? " " + qty(t.qty) : "") + " " + t.sym +
+    "</div>";
+
+  h += '<div class="fine">Market order, filled at the last price and written to this app’s ' +
+    "own ledger. Nothing is routed to a broker and no real money moves.</div>";
+
+  el.innerHTML = h;
+  el.classList.add("on");
+  scrim.classList.add("on");
+}
+
+function placeOrder() {
+  const t = state.ticket;
+  if (!t) return;
+  try {
+    const next = applyOrder(WORKING, state.feed.quotes, { sym: t.sym, side: t.side, qty: t.qty });
+    setManual(next.filter(isManual));
+    closeTicket();
+    render();
+  } catch (e) {
+    state.ticket.error = e.message;
+    renderTicket();
+  }
+}
+
+document.getElementById("scrim").addEventListener("click", closeTicket);
+
+document.getElementById("ticket").addEventListener("click", e => {
+  const t = state.ticket;
+  if (!t) return;
+
+  if (e.target.closest("#ticketClose")) { closeTicket(); return; }
+
+  const side = e.target.closest("[data-side]");
+  if (side) { t.side = side.getAttribute("data-side"); t.error = null; renderTicket(); return; }
+
+  const step = e.target.closest("[data-step]");
+  if (step) {
+    t.qty = Math.max(1, t.qty + Number(step.getAttribute("data-step")));
+    t.error = null;
+    renderTicket();
+    return;
+  }
+
+  const frac = e.target.closest("[data-frac]");
+  if (frac) {
+    const check = checkOrder(WORKING, state.feed.quotes, { sym: t.sym, side: t.side, qty: 1 });
+    t.qty = Math.max(1, Math.floor(check.max * Number(frac.getAttribute("data-frac"))));
+    t.error = null;
+    renderTicket();
+    return;
+  }
+
+  if (e.target.closest("#submit")) placeOrder();
+});
+
+document.getElementById("ticket").addEventListener("input", e => {
+  if (e.target.id !== "qtyInput" || !state.ticket) return;
+  const cleaned = e.target.value.replace(/[^0-9]/g, "");
+  e.target.value = cleaned;
+  state.ticket.qty = cleaned ? parseInt(cleaned, 10) : 0;
+  state.ticket.error = null;
+  // Re-render everything except the field being typed into, so the caret stays.
+  const focused = document.activeElement === e.target;
+  renderTicket();
+  if (focused) {
+    const next = document.getElementById("qtyInput");
+    if (next) { next.focus(); next.setSelectionRange(next.value.length, next.value.length); }
+  }
+});
 
 /* ==========================================================================
    7. SHELL
@@ -1564,6 +1912,18 @@ sheet.addEventListener("click", e => {
     document.getElementById("relayInput").value = "";
     workingRelay = -1; store.set("aiap.relayIndex", "-1");
     refresh();
+    return;
+  }
+
+  const trade = e.target.closest("[data-trade]");
+  if (trade && state.detail) {
+    openTicket(state.detail, trade.getAttribute("data-trade"));
+    return;
+  }
+
+  if (e.target.closest("#reset")) {
+    setManual([]);
+    render();
     return;
   }
 
@@ -1701,6 +2061,9 @@ window.PORTFOLIO = {
   replayLedger, buildPortfolio, checkInvariants,
   buildModelledCurve, monthEnds, holdingsAsOf,
   snapshotQuotes, fetchQuotes,
+  checkOrder, applyOrder, nextOrderId, isManual, setManual,
+  get WORKING() { return WORKING; },
+  get MANUAL() { return MANUAL; },
   portfolio, state
 };
 
