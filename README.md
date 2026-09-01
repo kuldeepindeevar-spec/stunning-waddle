@@ -58,8 +58,10 @@ Expo / React Native / TypeScript, iOS + Android + web. Every figure is derived f
 15-row transaction ledger on each render — no stored totals — and `npm run audit`
 asserts the accounting identities and the mandate constraints from the command line.
 
-See [`ai-portfolio-app/README.md`](ai-portfolio-app/README.md) and the reconciliation in
-[`ai-portfolio-app/docs/AUDIT.md`](ai-portfolio-app/docs/AUDIT.md).
+See [`ai-portfolio-app/README.md`](ai-portfolio-app/README.md), the account statement —
+every trade with date, quantity and price — in
+[`ai-portfolio-app/docs/PORTFOLIO.md`](ai-portfolio-app/docs/PORTFOLIO.md), and the
+reconciliation in [`ai-portfolio-app/docs/AUDIT.md`](ai-portfolio-app/docs/AUDIT.md).
 
 ## `ai-portfolio.html` — the same app as one file, for iPhone
 

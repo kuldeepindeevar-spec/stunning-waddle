@@ -44,8 +44,14 @@ Verify the numbers without launching anything:
 
 ```bash
 npm run audit      # full reconciliation, exits non-zero on any failure
+npm run statement  # regenerate docs/PORTFOLIO.md from the ledger
 npm run typecheck
 ```
+
+The account statement — every fill with its date, quantity and price, the running
+cash balance, the two sales worked through, and the closing positions — is in
+[`docs/PORTFOLIO.md`](docs/PORTFOLIO.md), generated from the ledger so it cannot
+drift from what the app shows.
 
 ## The portfolio
 
@@ -145,6 +151,7 @@ src/
 scripts/
   audit.ts              the full reconciliation (npm run audit)
   calibrate.ts          re-centre the book inside the band (npm run calibrate)
+  statement.ts          write docs/PORTFOLIO.md from the ledger (npm run statement)
   shots.mjs             render the web build at phone size and screenshot each tab
 ```
 
