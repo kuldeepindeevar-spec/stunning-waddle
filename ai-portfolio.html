@@ -1,0 +1,2074 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>Portfolio</title>
+
+<!-- Add to Home Screen on iOS: full-screen, no Safari chrome, dark status bar. -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Portfolio">
+<meta name="theme-color" content="#000000">
+<meta name="color-scheme" content="dark">
+<meta name="format-detection" content="telephone=no">
+
+<style>
+/* ---------------------------------------------------------------- tokens */
+:root {
+  --bg: #000000;
+  --card: #1a1a1c;
+  --card-2: #242528;
+  --chip: #1f2023;
+  --chip-on: #3a2410;
+  --divider: #26272b;
+
+  --text: #ffffff;
+  --text-2: #9ba0a8;
+  --text-3: #6d727a;
+
+  --brand: #ff7a00;
+  --brand-soft: rgba(255, 122, 0, 0.14);
+  --blue: #2b7fff;
+
+  --up: #00c46a;
+  --down: #f4485c;
+  --up-fill: #00b761;
+  --down-fill: #e5384c;
+
+  --grid: #1e1f23;
+
+  --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  margin: 0; padding: 0; height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+}
+body { -webkit-user-select: none; user-select: none; }
+.sel, .num { -webkit-user-select: text; user-select: text; }
+
+/* Tabular figures without a monospace face — columns line up as prices tick
+   while the type still reads like the rest of the interface. */
+.num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
+
+#app { display: flex; flex-direction: column; height: 100%; }
+
+/* ------------------------------------------------------------- top chrome */
+#topbar {
+  flex: none;
+  padding: calc(var(--safe-top) + 6px) 16px 10px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+.brand { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.mark {
+  width: 26px; height: 26px; flex: none; border-radius: 7px;
+  background: linear-gradient(150deg, #ff9a2e, var(--brand));
+  position: relative;
+}
+/* A rising notch inside the tile — a mark of its own, not a borrowed one. */
+.mark::after {
+  content: ""; position: absolute; inset: 0;
+  background:
+    linear-gradient(45deg, transparent 46%, rgba(0,0,0,0.55) 46%, rgba(0,0,0,0.55) 54%, transparent 54%);
+  border-radius: 7px;
+}
+#screenTitle { font-size: 22px; font-weight: 700; letter-spacing: -0.4px; }
+.tools { display: flex; align-items: center; gap: 14px; color: var(--text-2); flex: none; }
+.tools svg { width: 21px; height: 21px; display: block; }
+.tools .on { color: var(--brand); }
+
+#searchWrap { flex: none; padding: 0 16px 8px; }
+#searchWrap[hidden] { display: none; }
+#searchInput {
+  width: 100%; background: var(--chip); border: none; border-radius: 10px;
+  color: var(--text); font-family: var(--sans); font-size: 14px;
+  padding: 11px 12px; outline: none; -webkit-appearance: none;
+}
+#searchInput::placeholder { color: var(--text-3); }
+
+#strip {
+  flex: none;
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 16px;
+  background: var(--card);
+  margin: 0 16px 4px; border-radius: 10px;
+}
+.pill {
+  font-size: 10px; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase;
+  border-radius: 4px; padding: 3px 6px;
+}
+.pill.live { color: var(--up); background: rgba(0, 196, 106, 0.14); }
+.pill.snap { color: var(--brand); background: var(--brand-soft); }
+#stripMsg { font-size: 11px; color: var(--text-2); flex: 1; min-width: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#stripClock { font-size: 11px; color: var(--text-3); }
+#stripIcon { width: 14px; height: 14px; color: var(--text-3); }
+
+/* --------------------------------------------------------------- scroller */
+#scroller {
+  flex: 1; min-height: 0;
+  overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+#pull {
+  height: 0; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-3); font-size: 11px;
+  transition: height 0.18s ease;
+}
+#pull.armed { color: var(--brand); }
+#sheet { padding: 0 0 28px; }
+
+/* ------------------------------------------------------------------ atoms */
+.card {
+  background: var(--card);
+  border-radius: 14px;
+  margin: 0 16px 12px;
+  overflow: hidden;
+}
+.card.flush { padding: 0; }
+.pad { padding: 14px 16px; }
+.hr { height: 0.5px; background: var(--divider); }
+.hr.inset { margin-left: 16px; }
+
+.sechead {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 16px 10px;
+}
+.sechead h2 { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -0.2px; }
+.sechead .aside { font-size: 12px; color: var(--text-2); }
+
+.lbl { font-size: 12px; color: var(--text-2); }
+/* Inline-block so the rule hugs the words, not the width of its cell. */
+.dotted { display: inline-block; border-bottom: 1px dotted var(--text-3); padding-bottom: 1px; }
+.up { color: var(--up); }
+.down { color: var(--down); }
+.flat { color: var(--text-2); }
+
+/* A solid-filled change chip, the loudest element in the list. */
+.chip-pct {
+  display: inline-block; min-width: 78px; text-align: center;
+  padding: 5px 8px; border-radius: 5px;
+  font-size: 14px; font-weight: 700; color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+.chip-pct.up { background: var(--up-fill); color: #fff; }
+.chip-pct.down { background: var(--down-fill); color: #fff; }
+.chip-pct.flat { background: var(--card-2); color: var(--text-2); }
+
+/* Filter chips */
+.chiprow {
+  display: flex; gap: 8px; padding: 2px 16px 14px;
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.chiprow::-webkit-scrollbar { display: none; }
+.chiprow .c {
+  flex: none; padding: 9px 16px; border-radius: 9px;
+  background: var(--chip); color: var(--text-2);
+  font-size: 13px; font-weight: 600; white-space: nowrap;
+}
+.chiprow .c.on { background: var(--chip-on); color: var(--brand); }
+
+/* ------------------------------------------------------- account summary */
+#allacct {
+  display: flex; align-items: center; gap: 6px;
+  padding: 2px 16px 12px; color: var(--text);
+}
+#allacct .t { font-size: 17px; font-weight: 700; }
+#allacct .caret { color: var(--text-2); font-size: 11px; }
+#allacct .grow { flex: 1; }
+
+.acct-top { display: flex; align-items: center; gap: 10px; }
+.acct-top .dot {
+  width: 20px; height: 20px; border-radius: 5px; flex: none;
+  background: var(--blue);
+}
+.acct-top .nm { font-size: 16px; font-weight: 700; flex: 1; min-width: 0; }
+.acct-top .chev { color: var(--text-3); font-size: 16px; }
+
+.split { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+.split .r { text-align: right; }
+.big { font-size: 30px; font-weight: 600; letter-spacing: -0.8px; line-height: 1.15; }
+.mid { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+.sub { font-size: 13px; font-weight: 600; }
+
+.trio { display: flex; gap: 12px; }
+.trio .t { flex: 1; min-width: 0; }
+.trio .t:nth-child(2) { text-align: center; }
+.trio .t:nth-child(3) { text-align: right; }
+.trio .tv { font-size: 15px; font-weight: 600; margin-top: 5px; }
+
+/* ------------------------------------------------------------------ chart */
+#chartwrap { position: relative; }
+#chartwrap svg { display: block; width: 100%; }
+#chartwrap .ax { position: absolute; font-size: 10px; color: var(--text-3);
+  font-variant-numeric: tabular-nums; }
+/* Sits inside an already-padded card, so it carries no horizontal padding. */
+.chartcap {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+  padding: 6px 0 2px;
+}
+.chartcap .k { font-size: 11px; color: var(--text-3); }
+
+/* ---------------------------------------------------------------- blotter */
+.cols { display: flex; align-items: center; padding: 10px 16px; gap: 8px; }
+.cols .h {
+  font-size: 12px; color: var(--text-2); display: flex; align-items: center; gap: 3px;
+}
+.cols .h.on { color: var(--brand); }
+.cols .h .cr { font-size: 9px; line-height: 1; opacity: 0.85; }
+.cols .c1 { flex: 2.6; }
+.cols .c2 { flex: 2.1; justify-content: flex-end; }
+.cols .c3 { flex: 2.0; justify-content: flex-end; }
+.cols .c4 { flex: 2.1; justify-content: flex-end; }
+
+.hrow { display: flex; align-items: center; padding: 13px 16px; gap: 8px; }
+.hrow:active { background: var(--card-2); }
+.hrow .c1 { flex: 2.6; min-width: 0; }
+.hrow .c2 { flex: 2.1; text-align: right; }
+.hrow .c3 { flex: 2.0; text-align: right; }
+.hrow .c4 { flex: 2.1; text-align: right; }
+.hrow .n1 { font-size: 15px; font-weight: 600; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; }
+.hrow .n2 { font-size: 12px; color: var(--text-3); margin-top: 3px; }
+.hrow .v1 { font-size: 15px; font-weight: 600; }
+.hrow .v2 { font-size: 12px; color: var(--text-3); margin-top: 3px; }
+
+.cashline { display: flex; justify-content: space-between; padding: 13px 16px; }
+.cashline .l { font-size: 14px; color: var(--text-2); }
+.cashline .v { font-size: 14px; font-weight: 600; }
+
+/* -------------------------------------------------------------- watchlist */
+.wtool { display: flex; align-items: center; gap: 16px; padding: 12px 16px 10px; }
+.wtool svg { width: 18px; height: 18px; color: var(--text-2); display: block; }
+.wtool .grow { flex: 1; }
+.wtool .s { font-size: 12px; color: var(--text-2); display: flex; align-items: center; gap: 3px; }
+.wtool .s.on { color: var(--brand); }
+
+.wrow { display: flex; align-items: center; padding: 12px 16px; gap: 10px; }
+.wrow:active { background: var(--card-2); }
+.wrow .id { flex: 1.9; min-width: 0; }
+.wrow .spark { flex: none; width: 62px; height: 30px; }
+.wrow .px { flex: 1.1; text-align: right; }
+.wrow .pc { flex: none; }
+.wrow .n1 { font-size: 15px; font-weight: 600; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; }
+.wrow .n2 { font-size: 12px; color: var(--text-3); margin-top: 3px; }
+.wrow .v1 { font-size: 15px; font-weight: 600; }
+.wrow .v2 { font-size: 12px; color: var(--text-3); margin-top: 3px; }
+
+#ticker {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 16px; margin: 4px 16px 0;
+  background: rgba(0, 196, 106, 0.10); border-radius: 10px;
+}
+#ticker.neg { background: rgba(244, 72, 92, 0.10); }
+#ticker .k { font-size: 13px; color: var(--text-2); flex: 1; }
+#ticker .v { font-size: 13px; font-weight: 700; }
+
+/* --------------------------------------------------------------- activity */
+.act { display: flex; padding: 13px 16px; gap: 12px; }
+.act .l { flex: 1; min-width: 0; }
+.act .top { display: flex; align-items: center; gap: 8px; }
+.act .tag {
+  font-size: 11px; font-weight: 800; letter-spacing: 0.3px;
+  padding: 2px 6px; border-radius: 4px;
+}
+.act .tag.buy { color: var(--up); background: rgba(0, 196, 106, 0.14); }
+.act .tag.sell { color: var(--down); background: rgba(244, 72, 92, 0.14); }
+.act .tag.dep { color: var(--blue); background: rgba(43, 127, 255, 0.14); }
+.act .sym { font-size: 15px; font-weight: 700; }
+.act .dt { font-size: 11px; color: var(--text-3); }
+.act .det { font-size: 13px; color: var(--text-2); margin-top: 4px; }
+.act .why { font-size: 11px; color: var(--text-3); margin-top: 4px; line-height: 15px; }
+.act .r { text-align: right; flex: none; }
+.act .g { font-size: 15px; font-weight: 600; }
+.act .ca { font-size: 11px; color: var(--text-3); margin-top: 4px; }
+
+/* ------------------------------------------------------------------ audit */
+.verdict { display: flex; gap: 12px; align-items: center; }
+.verdict .t { font-size: 17px; font-weight: 700; }
+.verdict .b { font-size: 12px; color: var(--text-2); margin-top: 3px; line-height: 17px; }
+
+.kv { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; gap: 12px; }
+.kv .k { font-size: 13px; color: var(--text-2); }
+.kv .v { font-size: 14px; font-weight: 600; }
+.kv.strong .k { color: var(--text); font-weight: 700; }
+.kv.strong .v { font-size: 16px; font-weight: 700; }
+
+#meter { height: 26px; display: flex; align-items: center; position: relative; margin-top: 10px; }
+#meter .track { height: 4px; background: var(--card-2); border-radius: 3px; width: 100%; }
+#meter .band { position: absolute; height: 4px; background: var(--up); opacity: 0.5; border-radius: 3px; }
+#meter .mark { position: absolute; width: 3px; height: 18px; background: var(--text);
+  margin-left: -1.5px; border-radius: 2px; }
+
+.chk { display: flex; gap: 10px; padding: 12px 16px; }
+.chk .ico { flex: none; width: 18px; height: 18px; margin-top: 1px; }
+.chk .n { font-size: 14px; font-weight: 600; }
+.chk .d { font-size: 12px; color: var(--text-2); margin-top: 3px; line-height: 17px; }
+.chk .x { font-size: 11px; color: var(--text-3); margin-top: 5px;
+  font-variant-numeric: tabular-nums; }
+
+.facts { display: flex; flex-wrap: wrap; }
+.facts .f { width: 50%; padding: 9px 0; }
+.facts .fl { font-size: 12px; color: var(--text-2); }
+.facts .fv { font-size: 16px; font-weight: 600; margin-top: 3px; }
+
+.note { padding: 12px 16px 0; font-size: 12px; line-height: 18px; color: var(--text-3); }
+.note.in { padding: 10px 0 0; }
+
+/* --------------------------------------------------------------- settings */
+.setrow { padding: 12px 0 0; }
+.setrow label { font-size: 12px; color: var(--text-2); display: block; margin-bottom: 8px; }
+.setrow input {
+  width: 100%; background: var(--chip); border: none; border-radius: 10px;
+  color: var(--text); font-family: var(--sans); font-size: 13px;
+  padding: 12px; outline: none; -webkit-appearance: none;
+}
+.btnrow { display: flex; gap: 10px; padding: 12px 0 2px; }
+.btn {
+  flex: 1; text-align: center; padding: 13px; border-radius: 10px;
+  background: var(--chip); font-size: 14px; font-weight: 600; color: var(--text);
+}
+.btn:active { opacity: 0.7; }
+.btn.primary { background: var(--brand); color: #fff; }
+
+/* ----------------------------------------------------------------- detail */
+#back { display: flex; align-items: center; gap: 4px; padding: 4px 12px 8px;
+  color: var(--text-2); font-size: 15px; }
+#back svg { width: 20px; height: 20px; }
+.dhead .sym { font-size: 24px; font-weight: 700; letter-spacing: -0.4px; }
+.dhead .nm { font-size: 13px; color: var(--text-2); margin-top: 3px; }
+.dhead .venue { font-size: 12px; color: var(--text-3); margin-top: 6px; }
+.dhead .last { font-size: 32px; font-weight: 600; letter-spacing: -0.8px; margin-top: 14px; }
+.dhead .dl { font-size: 14px; font-weight: 600; margin-top: 4px; }
+.proof { font-size: 13px; color: var(--text-2); line-height: 24px;
+  font-variant-numeric: tabular-nums; }
+
+/* ---------------------------------------------------------------- tab bar */
+#tabs {
+  flex: none; display: flex;
+  background: #0a0a0b;
+  border-top: 0.5px solid var(--divider);
+  padding: 8px 0 calc(var(--safe-bottom) + 6px);
+}
+#tabs .tab {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 4px;
+  min-height: 44px; color: var(--text-3);
+}
+#tabs .tab.on { color: var(--brand); }
+#tabs svg { width: 23px; height: 23px; display: block; }
+#tabs .lab { font-size: 10px; font-weight: 600; }
+
+/* ------------------------------------------------------------ order ticket */
+#tradebar { display: flex; gap: 12px; margin: 0 16px 12px; }
+#tradebar .b {
+  flex: 1; text-align: center; padding: 14px; border-radius: 12px;
+  font-size: 16px; font-weight: 700; color: #fff;
+}
+#tradebar .buy { background: var(--up-fill); }
+#tradebar .sell { background: var(--down-fill); }
+#tradebar .b:active { opacity: 0.8; }
+
+#scrim {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+  opacity: 0; pointer-events: none; transition: opacity 0.18s ease; z-index: 40;
+}
+#scrim.on { opacity: 1; pointer-events: auto; }
+
+#ticket {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
+  background: var(--card);
+  border-radius: 20px 20px 0 0;
+  padding: 8px 16px calc(var(--safe-bottom) + 24px);
+  transform: translateY(100%); transition: transform 0.22s ease;
+  max-height: 92%; overflow-y: auto; -webkit-overflow-scrolling: touch;
+}
+#ticket.on { transform: translateY(0); }
+#ticket .grab {
+  width: 36px; height: 4px; border-radius: 2px; background: var(--divider);
+  margin: 0 auto 12px;
+}
+/* An explicit dismiss: the sheet is tall enough to cover the scrim, so
+   tapping outside it is not a reliable way out on a phone. */
+#ticket .bar {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 6px;
+}
+#ticket .bar .t { font-size: 13px; color: var(--text-2); }
+#ticketClose {
+  width: 34px; height: 34px; margin-right: -8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; color: var(--text-2);
+}
+#ticket .head { display: flex; align-items: flex-start; gap: 12px; }
+#ticket .head .sym { font-size: 22px; font-weight: 700; }
+#ticket .head .nm { font-size: 13px; color: var(--text-2); margin-top: 2px; }
+#ticket .head .r { text-align: right; margin-left: auto; }
+#ticket .head .lastv { font-size: 20px; font-weight: 700; margin-top: 2px; }
+
+#sideRow { display: flex; gap: 8px; margin-top: 16px; }
+#sideRow .s {
+  flex: 1; text-align: center; padding: 12px; border-radius: 10px;
+  background: var(--chip); color: var(--text-2); font-size: 15px; font-weight: 700;
+}
+#sideRow .s.on { color: #fff; }
+#sideRow .s.on.buy { background: var(--up-fill); }
+#sideRow .s.on.sell { background: var(--down-fill); }
+
+#qtyRow { display: flex; align-items: center; gap: 8px; }
+#qtyRow .step {
+  width: 48px; height: 48px; border-radius: 10px; background: var(--chip);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; line-height: 1;
+}
+#qtyRow input {
+  flex: 1; height: 48px; border: none; border-radius: 10px; background: var(--chip);
+  color: var(--text); font-family: var(--sans); font-size: 18px; font-weight: 700;
+  text-align: center; outline: none; -webkit-appearance: none;
+  font-variant-numeric: tabular-nums;
+}
+#presets { display: flex; gap: 8px; margin-top: 8px; }
+#presets .p {
+  flex: 1; text-align: center; padding: 9px; border-radius: 9px;
+  background: var(--chip); color: var(--text-2); font-size: 13px; font-weight: 600;
+}
+#ticket .err { font-size: 12px; color: var(--down); margin-top: 8px; line-height: 17px; }
+#submit {
+  margin-top: 16px; text-align: center; padding: 15px; border-radius: 10px;
+  font-size: 16px; font-weight: 700; color: #fff;
+}
+#submit.off { background: var(--chip); color: var(--text-3); }
+#ticket .fine {
+  font-size: 11px; color: var(--text-3); line-height: 16px;
+  margin-top: 12px; text-align: center;
+}
+.tag.app { color: var(--brand); background: var(--brand-soft); }
+#reset {
+  margin-top: 12px; text-align: center; padding: 13px; border-radius: 10px;
+  background: var(--chip); color: var(--down); font-size: 14px; font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="topbar">
+    <div class="brand"><span class="mark"></span><span id="screenTitle">Portfolio</span></div>
+    <div class="tools">
+      <span id="searchBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6"/>
+        </svg>
+      </span>
+    </div>
+  </div>
+
+  <div id="searchWrap" hidden>
+    <input id="searchInput" type="search" placeholder="Filter by symbol or name"
+           autocapitalize="characters" autocorrect="off" spellcheck="false">
+  </div>
+
+  <div id="strip">
+    <span class="pill snap" id="stripPill">Snapshot</span>
+    <span id="stripMsg">Loading…</span>
+    <span id="stripClock" class="num">--:--:--</span>
+    <svg id="stripIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round">
+      <path d="M20 11a8 8 0 10-2.3 5.7"/><path d="M20 5v6h-6"/>
+    </svg>
+  </div>
+
+  <div id="scroller">
+    <div id="pull"></div>
+    <div id="sheet"></div>
+  </div>
+
+  <div id="tabs"></div>
+</div>
+
+<div id="scrim"></div>
+<div id="ticket" role="dialog" aria-label="Order ticket"></div>
+
+<script>
+"use strict";
+
+/* ==========================================================================
+   1. DATA — the ledger is the only source of truth.
+
+   Positions, cost basis, realised P&L, cash and total return are all derived
+   from these rows at runtime. Nothing about the portfolio is stored as a
+   result, so no two figures on screen can disagree.
+   ========================================================================== */
+
+const ACCOUNT = { id: "7734829", title: "Portfolio", ccy: "USD" };
+const INCEPTION_DATE = "2022-06-30";
+const INITIAL_CAPITAL = 100000;
+const RETURN_BAND = { min: 300, max: 500 };
+
+/*
+ * A cautious start: a large-cap tech basket bought into the 2022 drawdown with
+ * only a third of the deposit, the rest held back. That reserve is what the
+ * account spent through 2024 broadening into AI infrastructure once the capex
+ * cycle was visible — later, and at higher prices, than the bottom-tickers.
+ * Three of those later positions have not worked.
+ */
+const TRADES = [
+  { id:"T001", date:"2022-06-30", side:"BUY",  sym:"NVDA", qty:400, px:15.16,
+    note:"Inception — core accelerator exposure, bought into the 2022 derating." },
+  { id:"T002", date:"2022-06-30", side:"BUY",  sym:"MU",   qty:60,  px:55.31,
+    note:"Inception — memory at a cycle trough." },
+  { id:"T003", date:"2022-06-30", side:"BUY",  sym:"AVGO", qty:250, px:48.56,
+    note:"Inception — the largest opening position, on the networking franchise." },
+  { id:"T004", date:"2022-06-30", side:"BUY",  sym:"ADBE", qty:40,  px:366.00,
+    note:"Inception — quality software at a derated multiple. It has gone nowhere since." },
+  { id:"T005", date:"2022-10-31", side:"BUY",  sym:"META", qty:60,  px:93.16,
+    note:"Bought the capitulation, on the view that the capex was an asset, not a hole." },
+
+  { id:"T006", date:"2023-09-14", side:"BUY",  sym:"AVGO", qty:100, px:84.00,
+    note:"Added to Broadcom as the custom-accelerator order book became visible." },
+  { id:"T007", date:"2024-02-27", side:"BUY",  sym:"VRT",  qty:200, px:65.00,
+    note:"Data centre thermal and power, bought after the print that made the capex cycle explicit." },
+  { id:"T008", date:"2024-05-07", side:"BUY",  sym:"PLTR", qty:310, px:22.00,
+    note:"AIP was converting pilots into US commercial seats. Started a position." },
+  { id:"T009", date:"2024-07-15", side:"BUY",  sym:"HOOD", qty:400, px:23.00,
+    note:"Fintech sleeve — retail brokerage taking share and monetising beyond equities." },
+  { id:"T010", date:"2024-08-15", side:"SELL", sym:"NVDA", qty:100, px:122.50,
+    note:"Trimmed a quarter of the NVDA line after the run, to fund the AI cloud names." },
+  { id:"T011", date:"2024-10-21", side:"BUY",  sym:"NBIS", qty:190, px:20.00,
+    note:"Bought on the day Nasdaq resumed trading in Nebius." },
+  { id:"T012", date:"2024-12-20", side:"BUY",  sym:"COIN", qty:50,  px:285.00,
+    note:"Regulated crypto rails, bought into the post-election run. Poorly timed." },
+
+  { id:"T013", date:"2025-03-28", side:"BUY",  sym:"CRWV", qty:300, px:40.00,
+    note:"Bought the CoreWeave IPO at the offer price on the first close." },
+  { id:"T014", date:"2025-09-30", side:"SELL", sym:"MU",   qty:12,  px:620.00,
+    note:"Top-sliced memory after the HBM re-rating to free cash for a new position." },
+  { id:"T015", date:"2025-09-30", side:"BUY",  sym:"PYPL", qty:110, px:85.00,
+    note:"Branded-checkout turnaround at a single-digit multiple. Still underwater." }
+];
+
+const INSTRUMENTS = {
+  VRT:  { name:"Vertiv Holdings Co",         ex:"NYSE",   sector:"Data Centre",
+          thesis:"Thermal and power for the AI data centre buildout. Added in 2024, once the capex cycle was explicit." },
+  PLTR: { name:"Palantir Technologies Inc",  ex:"NASDAQ", sector:"AI Software",
+          thesis:"AIP land-and-expand in US commercial. Started in 2024 as pilots converted to seats." },
+  NVDA: { name:"NVIDIA Corp",                ex:"NASDAQ", sector:"Semis",
+          thesis:"The accelerated-compute standard. Held since inception, trimmed once into the 2024 run." },
+  MU:   { name:"Micron Technology Inc",      ex:"NASDAQ", sector:"Memory",
+          thesis:"HBM supply is the binding constraint on accelerator shipments." },
+  HOOD: { name:"Robinhood Markets Inc",      ex:"NASDAQ", sector:"Fintech",
+          thesis:"Retail brokerage taking share and monetising beyond equities." },
+  META: { name:"Meta Platforms Inc",         ex:"NASDAQ", sector:"Big Tech",
+          thesis:"Bought in the November 2022 capitulation on the view that AI capex was an asset, not a hole." },
+  AVGO: { name:"Broadcom Inc",               ex:"NASDAQ", sector:"Semis",
+          thesis:"Custom accelerator (XPU) and AI networking franchise. The largest opening position, added to in 2023." },
+  NBIS: { name:"Nebius Group N.V.",          ex:"NASDAQ", sector:"AI Cloud",
+          thesis:"Neocloud GPU capacity, bought on the day Nasdaq resumed trading." },
+  CRWV: { name:"CoreWeave Inc",              ex:"NASDAQ", sector:"AI Cloud",
+          thesis:"Contracted GPU cloud backlog. Bought at the IPO price on the first close." },
+  ADBE: { name:"Adobe Inc",                  ex:"NASDAQ", sector:"Software",
+          thesis:"Quality software bought at a derated multiple in 2022. The AI narrative has repriced the moat rather than the roadmap." },
+  COIN: { name:"Coinbase Global Inc",        ex:"NASDAQ", sector:"Fintech",
+          thesis:"Regulated crypto rails. Bought into the post-election run and immediately gave it back." },
+  PYPL: { name:"PayPal Holdings Inc",        ex:"NASDAQ", sector:"Fintech",
+          thesis:"Branded-checkout turnaround bought on a single-digit multiple. Still waiting." }
+};
+
+/* Offline fallback and the fixed reference the audit values against. Live
+   quotes always take precedence when the feed answers. */
+const SNAPSHOT_AS_OF = "2026-08-31T20:00:00Z";
+const SNAPSHOT = {
+  VRT:  { price:257.08, prev:269.28 },
+  PLTR: { price:186.29, prev:185.94 },
+  NVDA: { price:218.75, prev:220.10 },
+  MU:   { price:932.86, prev:935.38 },
+  HOOD: { price:104.26, prev:110.20 },
+  META: { price:578.02, prev:571.11 },
+  AVGO: { price:306.42, prev:302.39 },
+  NBIS: { price:209.18, prev:218.49 },
+  CRWV: { price:84.23,  prev:86.80  },
+  ADBE: { price:291.52, prev:289.15 },
+  COIN: { price:187.16, prev:183.90 },
+  PYPL: { price:70.01,  prev:69.20  }
+};
+
+/* ==========================================================================
+   2. ENGINE — replay the ledger, value it, state the invariants.
+   Ported line for line from the React Native build so both produce the same
+   numbers from the same rows.
+   ========================================================================== */
+
+/** Replay every trade in date order. Average-cost basis, as a US broker reports. */
+function replayLedger(trades) {
+  const ordered = trades.slice().sort((a, b) =>
+    a.date === b.date ? a.id.localeCompare(b.id) : a.date.localeCompare(b.date));
+
+  const bySymbol = new Map();
+  let cash = INITIAL_CAPITAL, minimumCash = cash, realizedPnl = 0;
+
+  for (const t of ordered) {
+    const gross = t.qty * t.px;
+    let lot = bySymbol.get(t.sym);
+    if (!lot) {
+      lot = { sym: t.sym, qty: 0, cost: 0, avg: 0, realized: 0,
+              firstBuy: t.date, lastTrade: t.date, trades: 0 };
+      bySymbol.set(t.sym, lot);
+    }
+
+    if (t.side === "BUY") {
+      lot.qty += t.qty;
+      lot.cost += gross;
+      cash -= gross;
+    } else {
+      if (t.qty > lot.qty) throw new Error(t.id + ": sells more " + t.sym + " than held");
+      const basisOut = lot.avg * t.qty;      // sold shares carry the blended basis
+      const gain = gross - basisOut;
+      lot.qty -= t.qty;
+      lot.cost -= basisOut;
+      lot.realized += gain;
+      realizedPnl += gain;
+      cash += gross;
+    }
+
+    lot.avg = lot.qty > 0 ? lot.cost / lot.qty : 0;
+    lot.lastTrade = t.date;
+    lot.trades += 1;
+    if (cash < minimumCash) minimumCash = cash;
+  }
+
+  return { lots: Array.from(bySymbol.values()), cash, realizedPnl, minimumCash };
+}
+
+/** Value the replayed ledger against a quote map. */
+function buildPortfolio(quotes, staleSet, asOf, trades) {
+  const { lots, cash, realizedPnl } = replayLedger(trades || WORKING);
+  const open = lots.filter(l => l.qty > 0);
+
+  const positions = open.map(lot => {
+    const q = quotes[lot.sym];
+    if (!q) throw new Error("no quote for " + lot.sym);
+    const marketValue = lot.qty * q.price;
+    const unrealized = marketValue - lot.cost;
+    const dayChange = q.price - q.prev;
+    return Object.assign({}, lot, {
+      price: q.price,
+      prev: q.prev,
+      marketValue,
+      unrealized,
+      unrealizedPct: lot.cost > 0 ? (unrealized / lot.cost) * 100 : 0,
+      dayPnl: dayChange * lot.qty,
+      dayChange,
+      dayChangePct: q.prev > 0 ? (dayChange / q.prev) * 100 : 0,
+      weight: 0,
+      stale: staleSet ? staleSet.has(lot.sym) : false
+    });
+  });
+
+  const securities = positions.reduce((s, p) => s + p.marketValue, 0);
+  const netLiquidation = securities + cash;
+
+  // Weights are a share of NLV, so cash is in the denominator and the position
+  // weights deliberately sum to slightly under 100%.
+  for (const p of positions) p.weight = netLiquidation > 0 ? p.marketValue / netLiquidation : 0;
+  positions.sort((a, b) => b.marketValue - a.marketValue);
+
+  const openCost = positions.reduce((s, p) => s + p.cost, 0);
+  const unrealizedPnl = securities - openCost;
+  const totalPnl = netLiquidation - INITIAL_CAPITAL;
+  const dayPnl = positions.reduce((s, p) => s + p.dayPnl, 0);
+  const prevNlv = netLiquidation - dayPnl;
+
+  const now = asOf || new Date();
+  const years = (now.getTime() - Date.parse(INCEPTION_DATE + "T00:00:00Z")) /
+                (365.25 * 24 * 3600 * 1000);
+  const growth = netLiquidation / INITIAL_CAPITAL;
+
+  return {
+    positions,
+    summary: {
+      initialCapital: INITIAL_CAPITAL,
+      netLiquidation, securities, cash, openCost,
+      unrealizedPnl, realizedPnl, totalPnl,
+      totalReturnPct: (totalPnl / INITIAL_CAPITAL) * 100,
+      dayPnl,
+      dayPnlPct: prevNlv > 0 ? (dayPnl / prevNlv) * 100 : 0,
+      years,
+      cagrPct: years > 0 ? (Math.pow(growth, 1 / years) - 1) * 100 : 0,
+      growth,
+      winners: positions.filter(p => p.unrealized > 0).length,
+      losers: positions.filter(p => p.unrealized < 0).length
+    }
+  };
+}
+
+const round2 = n => Math.round((n + Number.EPSILON) * 100) / 100;
+
+/** The accounting identities the whole app rests on. */
+function checkInvariants(pf, trades) {
+  const { positions: ps, summary: s } = pf;
+  const replay = replayLedger(trades || WORKING);
+  const sum = fn => ps.reduce((t, p) => t + fn(p), 0);
+  const mk = (name, detail, expected, actual, tol) => ({
+    name, detail, expected, actual,
+    passed: Math.abs(expected - actual) <= (tol === undefined ? 0.01 : tol)
+  });
+
+  return [
+    mk("Sources and uses",
+       "Open cost basis + settled cash must equal the opening deposit plus realised P&L. Nothing enters or leaves the account except the original $100,000.",
+       INITIAL_CAPITAL + s.realizedPnl, s.openCost + s.cash),
+    mk("Net liquidation value",
+       "NLV must equal the sum of position market values plus settled cash.",
+       sum(p => p.marketValue) + s.cash, s.netLiquidation),
+    mk("Position market value",
+       "Every line must satisfy quantity x last price = market value.",
+       sum(p => p.qty * p.price), sum(p => p.marketValue)),
+    mk("Unrealised P&L",
+       "Unrealised P&L must equal market value less remaining cost basis.",
+       sum(p => p.marketValue - p.cost), s.unrealizedPnl),
+    mk("Total P&L decomposition",
+       "Realised plus unrealised P&L must equal net liquidation value less the deposit.",
+       s.realizedPnl + s.unrealizedPnl, s.totalPnl),
+    mk("Total return",
+       "Total return % must equal total P&L divided by the opening deposit.",
+       (s.totalPnl / INITIAL_CAPITAL) * 100, s.totalReturnPct, 1e-9),
+    mk("Weights",
+       "Position weights plus the cash weight must sum to 100% of NLV.",
+       1, sum(p => p.weight) + s.cash / s.netLiquidation, 1e-9),
+    mk("Day P&L",
+       "Day P&L must equal the sum of (last - previous close) x quantity.",
+       sum(p => (p.price - p.prev) * p.qty), s.dayPnl),
+    mk("Cash never negative",
+       "The account is never overdrawn on any date in the ledger — no leverage is used.",
+       0, Math.min(0, replay.minimumCash)),
+    mk("Average cost",
+       "Each line satisfies average cost x quantity = remaining cost basis.",
+       sum(p => round2(p.avg * p.qty)), sum(p => round2(p.cost)), ps.length * 0.01)
+  ];
+}
+
+/* --------------------------------------------------------- equity curve -- */
+
+/** Shares held and settled cash as at the end of the given date. */
+function holdingsAsOf(t, trades) {
+  const shares = {};
+  let cash = INITIAL_CAPITAL;
+  for (const tr of (trades || WORKING)) {
+    if (Date.parse(tr.date + "T00:00:00Z") > t) break;
+    const gross = tr.qty * tr.px;
+    if (tr.side === "BUY") { shares[tr.sym] = (shares[tr.sym] || 0) + tr.qty; cash -= gross; }
+    else                   { shares[tr.sym] = (shares[tr.sym] || 0) - tr.qty; cash += gross; }
+  }
+  return { shares, cash };
+}
+
+/**
+ * Month-end timestamps from inception to now, plus now itself. Walks
+ * year/month as integers rather than mutating a Date — month arithmetic on a
+ * date pinned to a month end normalises in ways that are easy to get wrong.
+ */
+function monthEnds(now) {
+  const startMs = Date.parse(INCEPTION_DATE + "T00:00:00Z");
+  const start = new Date(startMs);
+  const out = [startMs];
+  let y = start.getUTCFullYear(), m = start.getUTCMonth();
+  for (let guard = 0; guard < 1200; guard++) {
+    const end = Date.UTC(y, m + 1, 0);       // day 0 of next month = last of this
+    if (end >= now) break;
+    if (end > startMs) out.push(end);
+    m += 1;
+    if (m > 11) { m = 0; y += 1; }
+  }
+  out.push(now);
+  return out;
+}
+
+/** Per-symbol price anchors: every price the ledger transacted at, plus today. */
+function priceAnchors(quotes, now, trades) {
+  const anchors = {};
+  for (const t of (trades || WORKING)) {
+    (anchors[t.sym] = anchors[t.sym] || []).push({ t: Date.parse(t.date + "T00:00:00Z"), px: t.px });
+  }
+  for (const sym in anchors) {
+    if (quotes[sym]) anchors[sym].push({ t: now, px: quotes[sym].price });
+    anchors[sym].sort((a, b) => a.t - b.t);
+  }
+  return anchors;
+}
+
+/** Log-linear interpolation between a symbol's anchors. */
+function priceAt(anchors, sym, t) {
+  const list = anchors[sym];
+  if (!list || !list.length) return null;
+  if (t <= list[0].t) return list[0].px;
+  if (t >= list[list.length - 1].t) return list[list.length - 1].px;
+  for (let i = 1; i < list.length; i++) {
+    const a = list[i - 1], b = list[i];
+    if (t <= b.t) {
+      const span = b.t - a.t;
+      const w = span === 0 ? 1 : (t - a.t) / span;
+      return Math.exp(Math.log(a.px) * (1 - w) + Math.log(b.px) * w);
+    }
+  }
+  return list[list.length - 1].px;
+}
+
+/**
+ * Modelled curve. The endpoints are exact; the shape between them is an
+ * approximation, and the chart labels itself as such.
+ */
+function buildModelledCurve(quotes, now, trades) {
+  const anchors = priceAnchors(quotes, now, trades);
+  const points = [];
+  for (const t of monthEnds(now)) {
+    const { shares, cash } = holdingsAsOf(t, trades);
+    let value = cash;
+    for (const sym in shares) {
+      if (shares[sym] <= 0) continue;
+      const px = priceAt(anchors, sym, t);
+      if (px != null) value += shares[sym] * px;
+    }
+    points.push({ t, value });
+  }
+  return { points, basis: "modelled" };
+}
+
+/* ==========================================================================
+   2b. ORDERS
+
+   An order is not a stored balance change — it appends a row to the ledger,
+   and every figure re-derives from the longer ledger on the next render. Two
+   rules are enforced before a row is appended, because they are the same
+   invariants the Reports tab asserts afterwards: a buy can never spend more
+   than the settled cash on hand, and a sell can never exceed the shares held.
+
+   Orders fill at the last price. There is no limit order, because nothing here
+   runs while the app is closed and an order that could never fill would be a
+   control that lies about what it does.
+   ========================================================================== */
+
+/** The shipped rows plus any orders placed in the app, in date order. */
+let WORKING = null;   // initialised once the loader below is defined
+
+const MANUAL_KEY = "portfolio.manualTrades.v1";
+const isManual = t => /^M\d+$/.test(t.id);
+
+const byDate = rows => rows.slice().sort((a, b) =>
+  a.date === b.date ? a.id.localeCompare(b.id) : a.date.localeCompare(b.date));
+
+function loadManual() {
+  try {
+    const raw = localStorage.getItem(MANUAL_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed.filter(isManual) : [];
+  } catch (e) { return []; }
+}
+function saveManual(rows) {
+  try { localStorage.setItem(MANUAL_KEY, JSON.stringify(rows)); } catch (e) {}
+}
+
+/** Ledger id for the next manually entered order. */
+function nextOrderId(trades) {
+  const used = trades.map(t => /^M(\d+)$/.exec(t.id)).filter(Boolean).map(m => Number(m[1]));
+  return "M" + String((used.length ? Math.max.apply(null, used) : 0) + 1).padStart(3, "0");
+}
+
+const todayIso = (now) => (now || new Date()).toISOString().slice(0, 10);
+
+/*
+ * Manual rows live here, and storage is only a side effect of changing them.
+ * If localStorage is unavailable — private mode, a file:// origin — orders
+ * still apply for the session instead of vanishing the moment they are placed.
+ */
+let MANUAL = loadManual();
+function setManual(rows) { MANUAL = rows; saveManual(rows); return rebuildWorking(); }
+function rebuildWorking() { WORKING = byDate(TRADES.concat(MANUAL)); return WORKING; }
+rebuildWorking();
+
+/**
+ * Validate a draft against the ledger and marks. Returns the limits as well as
+ * the verdict, so the ticket renders "Max" and the available balance from the
+ * same computation that decides whether to accept.
+ */
+function checkOrder(trades, quotes, draft) {
+  const quote = quotes[draft.sym];
+  const replay = replayLedger(trades);
+  const lot = replay.lots.find(l => l.sym === draft.sym);
+  const held = lot ? lot.qty : 0;
+  const cash = replay.cash;
+
+  if (!quote) return { max: 0, cash, held, value: 0, valid: false, reason: "No price for this symbol." };
+
+  const price = quote.price;
+  const max = draft.side === "BUY" ? Math.max(0, Math.floor(cash / price)) : held;
+  const value = draft.qty * price;
+
+  if (!Number.isInteger(draft.qty) || draft.qty <= 0)
+    return { max, cash, held, value, valid: false, reason: "Enter a whole number of shares." };
+  if (draft.side === "BUY" && value > cash + 1e-9)
+    return { max, cash, held, value, valid: false,
+      reason: "Not enough cash. " + max + " share" + (max === 1 ? "" : "s") + " is the most you can buy." };
+  if (draft.side === "SELL" && draft.qty > held)
+    return { max, cash, held, value, valid: false,
+      reason: held === 0 ? "You do not hold this position."
+                         : "You hold " + held + " share" + (held === 1 ? "" : "s") + "." };
+
+  return { max, cash, held, value, valid: true };
+}
+
+/** Append the order. Returns a new array; the shipped ledger is never mutated. */
+function applyOrder(trades, quotes, draft, now) {
+  const check = checkOrder(trades, quotes, draft);
+  if (!check.valid) throw new Error(check.reason || "Order rejected.");
+  return trades.concat([{
+    id: nextOrderId(trades),
+    date: todayIso(now),
+    side: draft.side,
+    sym: draft.sym,
+    qty: draft.qty,
+    px: quotes[draft.sym].price,
+    note: "Order placed in the app and recorded in this ledger."
+  }]);
+}
+
+/* ==========================================================================
+   3. QUOTES
+
+   Safari enforces CORS, and the Yahoo endpoint sends no CORS header, so the
+   request has to go through a relay. A short chain is tried in order and the
+   first that answers wins; the working one is remembered for next time. Any
+   symbol nothing answers for keeps its snapshot mark and is flagged in the
+   status strip — a stale price is never shown as a live one.
+
+   Set your own relay under Audit > Data source to avoid the public ones.
+   ========================================================================== */
+
+/*
+ * Every symbol the account has ever traded, not just the ones currently held.
+ * Selling a line to zero must not stop its quote, or the position could never
+ * be re-opened.
+ */
+const SYMBOLS = Array.from(new Set(TRADES.map(t => t.sym)));
+
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+};
+
+const YAHOO = sym =>
+  "https://query1.finance.yahoo.com/v8/finance/chart/" + encodeURIComponent(sym) +
+  "?range=1d&interval=1d";
+
+/** Relays, in the order they are tried. A custom one always goes first. */
+function relays() {
+  const list = [];
+  const custom = store.get("aiap.relay", "").trim();
+  if (custom) {
+    list.push(u => custom.indexOf("{url}") >= 0
+      ? custom.replace("{url}", encodeURIComponent(u))
+      : custom + encodeURIComponent(u));
+  }
+  list.push(u => "https://api.allorigins.win/raw?url=" + encodeURIComponent(u));
+  list.push(u => "https://corsproxy.io/?url=" + encodeURIComponent(u));
+  list.push(u => "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(u));
+  list.push(u => u);                       // direct, for a same-origin relay
+  return list;
+}
+
+let workingRelay = parseInt(store.get("aiap.relayIndex", "-1"), 10);
+
+function fetchJson(url, ms) {
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), ms || 9000);
+  return fetch(url, { signal: ctl.signal, cache: "no-store" })
+    .then(r => { if (!r.ok) throw new Error("http " + r.status); return r.json(); })
+    .finally(() => clearTimeout(timer));
+}
+
+function parseChart(body) {
+  const meta = body && body.chart && body.chart.result && body.chart.result[0] &&
+               body.chart.result[0].meta;
+  const price = meta && meta.regularMarketPrice;
+  if (typeof price !== "number" || !isFinite(price) || price <= 0) return null;
+  const prev = typeof meta.previousClose === "number" ? meta.previousClose
+             : typeof meta.chartPreviousClose === "number" ? meta.chartPreviousClose
+             : price;
+  return { price, prev };
+}
+
+/** One symbol, trying relays in order. Resolves to null rather than throwing. */
+async function fetchQuote(sym) {
+  const list = relays();
+  const order = [];
+  if (workingRelay >= 0 && workingRelay < list.length) order.push(workingRelay);
+  for (let i = 0; i < list.length; i++) if (i !== workingRelay) order.push(i);
+
+  for (const i of order) {
+    try {
+      const q = parseChart(await fetchJson(list[i](YAHOO(sym))));
+      if (q) {
+        if (workingRelay !== i) { workingRelay = i; store.set("aiap.relayIndex", String(i)); }
+        return q;
+      }
+    } catch (e) { /* try the next relay */ }
+  }
+  return null;
+}
+
+async function fetchQuotes() {
+  const quotes = {}, stale = new Set();
+  const results = await Promise.all(SYMBOLS.map(async s => [s, await fetchQuote(s)]));
+  for (const [sym, q] of results) {
+    if (q) quotes[sym] = q;
+    else { quotes[sym] = Object.assign({}, SNAPSHOT[sym]); stale.add(sym); }
+  }
+  return { quotes, stale, live: stale.size === 0 };
+}
+
+function snapshotQuotes() {
+  const quotes = {}, stale = new Set();
+  for (const s of SYMBOLS) { quotes[s] = Object.assign({}, SNAPSHOT[s]); stale.add(s); }
+  return { quotes, stale, live: false };
+}
+
+/* ==========================================================================
+   4. FORMATTING
+   ========================================================================== */
+
+const nf2 = new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const nf0 = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
+
+const money  = v => nf2.format(v);
+const whole  = v => nf0.format(v);
+const sMoney = v => (v < 0 ? "-" : "+") + nf2.format(Math.abs(v));
+const sPct   = (v, d) => (v >= 0 ? "+" : "-") + Math.abs(v).toFixed(d === undefined ? 2 : d) + "%";
+const pct    = (v, d) => v.toFixed(d === undefined ? 2 : d) + "%";
+const px     = v => (v < 1 ? v.toFixed(4) : nf2.format(v));
+const qty    = v => nf0.format(v);
+
+const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const shortDate = iso => {
+  const d = new Date(iso + "T00:00:00Z");
+  return d.getUTCDate() + " " + MONTHS[d.getUTCMonth()] + " " + d.getUTCFullYear();
+};
+const axisDate = t => {
+  const d = new Date(t);
+  return MONTHS[d.getUTCMonth()] + " '" + String(d.getUTCFullYear()).slice(2);
+};
+const clockTime = d => [d.getHours(), d.getMinutes(), d.getSeconds()]
+  .map(n => String(n).padStart(2, "0")).join(":");
+
+const tone = v => (v > 0 ? "up" : v < 0 ? "down" : "flat");
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+
+/* ==========================================================================
+   5. STATE
+   ========================================================================== */
+
+const REFRESH_MS = 20000;
+
+const state = {
+  feed: snapshotQuotes(),
+  curve: null,
+  lastUpdated: new Date(),
+  refreshing: false,
+  tab: "portfolio",
+  detail: null,
+  sector: "All",          // holdings filter chip
+  sort: { key: "mv", dir: -1 },
+  wsort: { key: "chg", dir: -1 },
+  query: "",
+  acctOpen: true,
+  ticket: null            // { sym, side, qty, error }
+};
+state.curve = buildModelledCurve(state.feed.quotes, Date.now());
+
+function portfolio() {
+  return buildPortfolio(state.feed.quotes, state.feed.stale, undefined, WORKING);
+}
+
+/* ==========================================================================
+   6. VIEWS
+   ========================================================================== */
+
+const sheet = document.getElementById("sheet");
+
+const hr = inset => '<div class="hr' + (inset ? " inset" : "") + '"></div>';
+const sechead = (title, aside) =>
+  '<div class="sechead"><h2>' + esc(title) + "</h2>" +
+  (aside ? '<span class="aside">' + esc(aside) + "</span>" : "") + "</div>";
+
+/** Caret pair for a sortable column header. */
+const caret = (active, dir) =>
+  '<span class="cr">' + (active ? (dir < 0 ? "▼" : "▲") : "⇅") + "</span>";
+
+/* ------------------------------------------------------------------ chart */
+function chartHtml(curve) {
+  const pts = curve.points;
+  if (pts.length < 2) return "";
+
+  const W = Math.max(document.documentElement.clientWidth - 32, 280);
+  const H = 150, padL = 0, padR = 46, padT = 8, padB = 18;
+
+  const xs = pts.map(p => p.t);
+  const ys = pts.map(p => Math.log(Math.max(p.value, 1)));
+  const xMin = Math.min.apply(null, xs), xMax = Math.max.apply(null, xs);
+  const yMin = Math.min.apply(null, ys), yMax = Math.max.apply(null, ys);
+  const ySpan = (yMax - yMin) || 1;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+
+  const sx = t => padL + ((t - xMin) / ((xMax - xMin) || 1)) * plotW;
+  const sy = v => padT + plotH - ((Math.log(Math.max(v, 1)) - yMin) / ySpan) * plotH;
+
+  const line = pts.map((p, i) => (i ? "L" : "M") + sx(p.t).toFixed(2) + "," + sy(p.value).toFixed(2)).join(" ");
+  const area = line + " L" + sx(xMax).toFixed(2) + "," + (padT + plotH).toFixed(2) +
+                      " L" + sx(xMin).toFixed(2) + "," + (padT + plotH).toFixed(2) + " Z";
+
+  // Gridlines at 1, 2 and 5 per decade. A log axis keeps equal percentage
+  // moves equal distances; whole decades alone would leave a range spanning
+  // less than 10x with a single line on it.
+  const decades = [];
+  for (let e = 4; e <= 8; e++) {
+    for (const mult of [1, 2, 5]) {
+      const v = mult * Math.pow(10, e);
+      if (Math.log(v) >= yMin && Math.log(v) <= yMax) decades.push(v);
+    }
+  }
+  const years = [];
+  for (let y = new Date(xMin).getUTCFullYear() + 1; Date.UTC(y, 0, 1) < xMax; y++) years.push(Date.UTC(y, 0, 1));
+
+  let svg = '<svg viewBox="0 0 ' + W + " " + H + '" preserveAspectRatio="none" height="' + H + '">' +
+    '<defs><linearGradient id="af" x1="0" y1="0" x2="0" y2="1">' +
+    '<stop offset="0" stop-color="rgba(255,122,0,0.30)"/>' +
+    '<stop offset="1" stop-color="rgba(255,122,0,0)"/></linearGradient></defs>';
+  for (const v of decades)
+    svg += '<line x1="' + padL + '" x2="' + (W - padR) + '" y1="' + sy(v) + '" y2="' + sy(v) +
+           '" stroke="var(--grid)" stroke-width="1"/>';
+  for (const t of years)
+    svg += '<line x1="' + sx(t) + '" x2="' + sx(t) + '" y1="' + padT + '" y2="' + (padT + plotH) +
+           '" stroke="var(--grid)" stroke-width="1"/>';
+  svg += '<path d="' + area + '" fill="url(#af)"/>' +
+         '<path d="' + line + '" fill="none" stroke="var(--brand)" stroke-width="2" ' +
+         'stroke-linejoin="round" stroke-linecap="round"/>' +
+         '<circle cx="' + sx(pts[pts.length - 1].t) + '" cy="' + sy(pts[pts.length - 1].value) +
+         '" r="3.2" fill="var(--brand)"/></svg>';
+
+  let labels = "";
+  for (const v of decades)
+    labels += '<div class="ax" style="top:' + (sy(v) - 7) + "px;right:6px\">" +
+              (v >= 1e6 ? (v / 1e6) + "M" : (v / 1e3) + "K") + "</div>";
+  for (const t of years)
+    labels += '<div class="ax" style="left:' + Math.max(0, sx(t) - 16) + 'px;bottom:0">' + axisDate(t) + "</div>";
+
+  return '<div id="chartwrap">' + svg + labels + "</div>";
+}
+
+/** A 62x30 sparkline of one symbol's path since its first purchase. */
+function sparkline(sym, anchors, now, tint) {
+  const list = anchors[sym];
+  if (!list || list.length < 2) return "";
+  const t0 = list[0].t, t1 = now;
+  const N = 24, vals = [];
+  for (let i = 0; i < N; i++) {
+    const t = t0 + ((t1 - t0) * i) / (N - 1);
+    const v = priceAt(anchors, sym, t);
+    if (v == null) return "";
+    vals.push(v);
+  }
+  const lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals);
+  const span = hi - lo || 1;
+  const W = 62, H = 30, pad = 3;
+  const d = vals.map((v, i) => {
+    const x = (i / (N - 1)) * W;
+    const y = pad + (H - pad * 2) * (1 - (v - lo) / span);
+    return (i ? "L" : "M") + x.toFixed(1) + "," + y.toFixed(1);
+  }).join(" ");
+  const area = d + " L" + W + "," + H + " L0," + H + " Z";
+  return '<svg class="spark" viewBox="0 0 ' + W + " " + H + '" preserveAspectRatio="none">' +
+    '<path d="' + area + '" fill="' + tint + '" fill-opacity="0.13"/>' +
+    '<path d="' + d + '" fill="none" stroke="' + tint + '" stroke-width="1.6" ' +
+    'stroke-linejoin="round" stroke-linecap="round"/></svg>';
+}
+
+/* -------------------------------------------------------------- portfolio */
+const SORTS = {
+  sym: p => p.sym,
+  mv: p => p.marketValue,
+  price: p => p.price,
+  day: p => p.dayPnl
+};
+
+function applyFilters(positions) {
+  let out = positions;
+  if (state.sector !== "All") {
+    out = out.filter(p => ((INSTRUMENTS[p.sym] || {}).sector || "Other") === state.sector);
+  }
+  const q = state.query.trim().toUpperCase();
+  if (q) {
+    out = out.filter(p =>
+      p.sym.indexOf(q) >= 0 || ((INSTRUMENTS[p.sym] || {}).name || "").toUpperCase().indexOf(q) >= 0);
+  }
+  const get = SORTS[state.sort.key] || SORTS.mv;
+  return out.slice().sort((a, b) => {
+    const x = get(a), y = get(b);
+    if (typeof x === "string") return state.sort.dir * x.localeCompare(y);
+    return state.sort.dir * (x - y);
+  });
+}
+
+function viewPortfolio() {
+  const pf = portfolio(), all = pf.positions, s = pf.summary;
+  const dt = tone(s.dayPnl);
+  const rows = applyFilters(all);
+
+  let h = "";
+
+  // --- account header ----------------------------------------------------
+  h += '<div id="allacct"><span class="t">All Accounts (1)</span>' +
+       '<span class="caret">▾</span><span class="grow"></span>' +
+       '<span class="caret" id="acctToggle">' + (state.acctOpen ? "▲" : "▼") + "</span></div>";
+
+  if (state.acctOpen) {
+    h += '<div class="card"><div class="pad">' +
+      '<div class="acct-top"><span class="dot"></span>' +
+      '<span class="nm">' + esc(ACCOUNT.title) + " (" + ACCOUNT.id + ')</span>' +
+      '<span class="chev">›</span></div>' +
+      '<div class="split" style="margin-top:14px">' +
+      '<div><div class="lbl">Total Assets · USD ▾</div>' +
+      '<div class="big num">' + money(s.netLiquidation) + "</div></div>" +
+      '<div class="r"><div class="lbl">Today’s P/L</div>' +
+      '<div class="mid num ' + dt + '">' + sMoney(s.dayPnl) + "</div>" +
+      '<div class="sub num ' + dt + '">' + sPct(s.dayPnlPct) + "</div></div></div>" +
+      "</div></div>";
+  }
+
+  // --- sector chips ------------------------------------------------------
+  const sectors = ["All"];
+  for (const p of all) {
+    const sec = (INSTRUMENTS[p.sym] || {}).sector || "Other";
+    if (sectors.indexOf(sec) < 0) sectors.push(sec);
+  }
+  h += '<div class="chiprow">' + sectors.map(sec =>
+    '<div class="c' + (sec === state.sector ? " on" : "") + '" data-sector="' + esc(sec) + '">' +
+    esc(sec) + "</div>").join("") + "</div>";
+
+  // --- return + stats ----------------------------------------------------
+  h += '<div class="card"><div class="pad">' +
+    '<div class="split">' +
+    '<div><div class="lbl">Total Return · since inception</div>' +
+    '<div class="big num ' + tone(s.totalPnl) + '">' + sPct(s.totalReturnPct) + "</div></div>" +
+    '<div class="r"><div class="lbl">Growth</div>' +
+    '<div class="mid num">' + s.growth.toFixed(2) + "x</div>" +
+    '<div class="sub" style="color:var(--text-3)">' + pct(s.cagrPct, 1) + " CAGR</div></div></div></div>";
+
+  // Full bleed inside the card — chartHtml sizes itself to the card's width,
+  // so it must not sit inside the padded block.
+  h += chartHtml(state.curve);
+
+  h += '<div class="pad" style="padding-top:0">' +
+    '<div class="chartcap"><span class="k">' + whole(state.curve.points[0].value) + " → " +
+    whole(state.curve.points[state.curve.points.length - 1].value) + "</span>" +
+    '<span class="k">' + (state.curve.basis === "marked"
+      ? "month-end closes" : "endpoints exact, path modelled") + "</span></div>";
+
+  // The third cell is computed, not asserted: it runs the same identities the
+  // Audit tab runs, so it cannot claim "reconciled" while something is off.
+  const reconciled = checkInvariants(pf).every(i => i.passed);
+  h += hr() + '<div class="trio" style="padding:14px 0 2px">' +
+    '<div class="t"><div class="lbl">Cost Basis</div><div class="tv num">' + money(s.openCost) + "</div></div>" +
+    '<div class="t"><div class="lbl">Realised P/L</div><div class="tv num ' + tone(s.realizedPnl) + '">' +
+      sMoney(s.realizedPnl) + "</div></div>" +
+    '<div class="t"><div class="lbl dotted">Reconciled</div><div class="tv ' +
+      (reconciled ? "up" : "down") + '">' + (reconciled ? "Yes" : "No") + "</div></div>" +
+    "</div></div></div>";
+
+  // --- holdings ----------------------------------------------------------
+  h += sechead("Holdings", rows.length + " of " + all.length);
+  h += '<div class="card flush">';
+  h += '<div class="cols">' +
+    '<span class="h c1' + (state.sort.key === "sym" ? " on" : "") + '" data-sort="sym">Symbol' +
+      caret(state.sort.key === "sym", state.sort.dir) + "</span>" +
+    '<span class="h c2' + (state.sort.key === "mv" ? " on" : "") + '" data-sort="mv">MV/Qty' +
+      caret(state.sort.key === "mv", state.sort.dir) + "</span>" +
+    '<span class="h c3' + (state.sort.key === "price" ? " on" : "") + '" data-sort="price">Price/Cost' +
+      caret(state.sort.key === "price", state.sort.dir) + "</span>" +
+    '<span class="h c4' + (state.sort.key === "day" ? " on" : "") + '" data-sort="day">Today’s P/L' +
+      caret(state.sort.key === "day", state.sort.dir) + "</span>" +
+    "</div>" + hr();
+
+  if (!rows.length) {
+    h += '<div class="note" style="padding:20px 16px">No holdings match this filter.</div>';
+  }
+  rows.forEach((p, i) => {
+    const inst = INSTRUMENTS[p.sym] || { name: p.sym };
+    h += '<div class="hrow" data-sym="' + p.sym + '">' +
+      '<div class="c1"><div class="n1">' + esc(inst.name) + "</div>" +
+      '<div class="n2">' + p.sym + "</div></div>" +
+      '<div class="c2"><div class="v1 num">' + money(p.marketValue) + "</div>" +
+      '<div class="v2 num">' + qty(p.qty) + "</div></div>" +
+      '<div class="c3"><div class="v1 num">' + px(p.price) + "</div>" +
+      '<div class="v2 num">' + px(p.avg) + "</div></div>" +
+      '<div class="c4"><div class="v1 num ' + tone(p.dayPnl) + '">' + sMoney(p.dayPnl) + "</div>" +
+      '<div class="v2 num ' + tone(p.unrealized) + '">' + sPct(p.unrealizedPct) + "</div></div></div>" +
+      (i < rows.length - 1 ? hr(true) : "");
+  });
+  h += "</div>";
+
+  h += '<div class="card"><div class="cashline" style="padding:13px 16px">' +
+    '<span class="l">USD Cash</span><span class="v num">' + money(s.cash) + "</span></div>" + hr() +
+    '<div class="cashline" style="padding:13px 16px">' +
+    '<span class="l" style="color:var(--text);font-weight:700">Net Assets</span>' +
+    '<span class="v num" style="font-weight:700">' + money(s.netLiquidation) + "</span></div></div>";
+
+  h += '<div class="note">Funded ' + shortDate(INCEPTION_DATE) + " with a single " +
+    whole(INITIAL_CAPITAL) + " USD deposit. No money added or withdrawn since. " +
+    "Target range " + RETURN_BAND.min + "%–" + RETURN_BAND.max + "%.</div>";
+
+  return h;
+}
+
+/* -------------------------------------------------------------- watchlist */
+const WSORTS = { sym: p => p.sym, price: p => p.price, chg: p => p.dayChangePct };
+
+function viewWatchlist() {
+  const pf = portfolio(), s = pf.summary;
+  const anchors = priceAnchors(state.feed.quotes, Date.now());
+
+  let rows = pf.positions.slice();
+  const q = state.query.trim().toUpperCase();
+  if (q) {
+    rows = rows.filter(p =>
+      p.sym.indexOf(q) >= 0 || ((INSTRUMENTS[p.sym] || {}).name || "").toUpperCase().indexOf(q) >= 0);
+  }
+  const get = WSORTS[state.wsort.key] || WSORTS.chg;
+  rows.sort((a, b) => {
+    const x = get(a), y = get(b);
+    if (typeof x === "string") return state.wsort.dir * x.localeCompare(y);
+    return state.wsort.dir * (x - y);
+  });
+
+  const dt = tone(s.dayPnl);
+  let h = '<div class="card"><div class="pad">' +
+    '<div class="acct-top"><span class="dot"></span>' +
+    '<span class="nm">' + esc(ACCOUNT.title) + " (" + ACCOUNT.id + ')</span>' +
+    '<span class="chev">›</span></div>' +
+    '<div class="split" style="margin-top:12px">' +
+    '<div><div class="lbl">US Assets · USD</div>' +
+    '<div class="big num">' + money(s.securities) + "</div></div>" +
+    '<div class="r"><div class="lbl">Today’s P/L</div>' +
+    '<div class="mid num ' + dt + '">' + sMoney(s.dayPnl) + "</div>" +
+    '<div class="sub num ' + dt + '">' + sPct(s.dayPnlPct) + "</div></div></div></div></div>";
+
+  h += '<div class="wtool">' +
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="8" height="16" rx="2"/><rect x="13" y="4" width="8" height="7" rx="2"/></svg>' +
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 17l5-6 4 3 5-8 4 5"/></svg>' +
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>' +
+    '<span class="grow"></span>' +
+    '<span class="s' + (state.wsort.key === "price" ? " on" : "") + '" data-wsort="price">Price' +
+      caret(state.wsort.key === "price", state.wsort.dir) + "</span>" +
+    '<span class="s' + (state.wsort.key === "chg" ? " on" : "") + '" data-wsort="chg">% Chg' +
+      caret(state.wsort.key === "chg", state.wsort.dir) + "</span>" +
+    "</div>";
+
+  h += '<div class="card flush">';
+  rows.forEach((p, i) => {
+    const t = tone(p.dayChange);
+    // The sparkline traces the path since first purchase, so it is tinted by
+    // that move — not by today's, which would leave a line sloping down over
+    // four years coloured green because it happens to be up on the day.
+    const sinceTone = tone(p.unrealized);
+    const tint = sinceTone === "up" ? "#00c46a" : sinceTone === "down" ? "#f4485c" : "#9ba0a8";
+    const inst = INSTRUMENTS[p.sym] || { name: p.sym };
+    h += '<div class="wrow" data-sym="' + p.sym + '">' +
+      '<div class="id"><div class="n1">' + esc(inst.name) + "</div>" +
+      '<div class="n2">' + p.sym + "</div></div>" +
+      sparkline(p.sym, anchors, Date.now(), tint) +
+      '<div class="px"><div class="v1 num ' + t + '">' + px(p.price) + "</div>" +
+      '<div class="v2 num">' + px(p.prev) + "</div></div>" +
+      '<div class="pc"><span class="chip-pct ' + t + '">' + sPct(p.dayChangePct) + "</span>" +
+      '<div class="v2 num" style="text-align:right">' + sPct(p.unrealizedPct, 1) + " total</div></div>" +
+      "</div>" + (i < rows.length - 1 ? hr(true) : "");
+  });
+  h += "</div>";
+
+  h += '<div class="note">Sparklines trace each holding from its first purchase to the current ' +
+    "mark, interpolated between the prices the account actually transacted at.</div>";
+
+  return h;
+}
+
+/* --------------------------------------------------------------- activity */
+function viewActivity() {
+  const s = portfolio().summary;
+  const rows = WORKING;
+  const buys = rows.filter(t => t.side === "BUY").length;
+  const manualCount = rows.filter(isManual).length;
+
+  const lines = [{
+    key: "deposit", date: INCEPTION_DATE, side: "DEPOSIT", sym: "USD",
+    detail: "Account funded", gross: INITIAL_CAPITAL, cashAfter: INITIAL_CAPITAL,
+    note: "The only external cash movement in the account’s history.", manual: false
+  }];
+  let cash = INITIAL_CAPITAL;
+  for (const t of rows) {
+    const gross = t.qty * t.px;
+    cash += t.side === "BUY" ? -gross : gross;
+    lines.push({
+      key: t.id, date: t.date, side: t.side, sym: t.sym,
+      detail: qty(t.qty) + " @ " + px(t.px),
+      gross: t.side === "BUY" ? -gross : gross, cashAfter: cash, note: t.note,
+      manual: isManual(t)
+    });
+  }
+  lines.reverse();
+
+  let h = sechead("Statement", buys + " buys · " + (rows.length - buys) + " sells");
+  h += '<div class="card"><div class="pad" style="font-size:13px;line-height:19px;color:var(--text-2)">' +
+    rows.length + " fills since " + shortDate(INCEPTION_DATE) +
+    (manualCount ? ", " + manualCount + " placed in the app" : "") +
+    ". Realised P&amp;L across all closed share lots is " +
+    '<span class="' + tone(s.realizedPnl) + '">' + sMoney(s.realizedPnl) + "</span>" +
+    ", which stayed in the account and funded later buys.</div></div>";
+
+  h += '<div class="card flush">';
+  lines.forEach((l, i) => {
+    const cls = l.side === "SELL" ? "sell" : l.side === "DEPOSIT" ? "dep" : "buy";
+    const inst = INSTRUMENTS[l.sym];
+    h += '<div class="act"><div class="l">' +
+      '<div class="top"><span class="tag ' + cls + '">' + l.side + "</span>" +
+      '<span class="sym">' + l.sym + '</span><span class="dt">' + shortDate(l.date) + "</span>" +
+      (l.manual ? '<span class="tag app">IN-APP</span>' : "") + "</div>" +
+      '<div class="det num">' + esc(l.detail) + (inst ? " · " + esc(inst.name) : "") + "</div>" +
+      '<div class="why">' + esc(l.note) + "</div></div>" +
+      '<div class="r"><div class="g num ' + tone(l.gross) + '">' + sMoney(l.gross) + "</div>" +
+      '<div class="ca num">cash ' + money(l.cashAfter) + "</div></div></div>" +
+      (i < lines.length - 1 ? hr(true) : "");
+  });
+  h += "</div>";
+  return h;
+}
+
+/* ------------------------------------------------------------------ audit */
+function viewAudit() {
+  const pf = portfolio(), s = pf.summary, ps = pf.positions;
+  const inv = checkInvariants(pf);
+  const allPass = inv.every(i => i.passed);
+  const inBand = s.totalReturnPct >= RETURN_BAND.min && s.totalReturnPct <= RETURN_BAND.max;
+
+  const floor = INITIAL_CAPITAL * (1 + RETURN_BAND.min / 100);
+  const ceil  = INITIAL_CAPITAL * (1 + RETURN_BAND.max / 100);
+  const down  = ((floor - s.netLiquidation) / s.netLiquidation) * 100;
+  const up    = ((ceil  - s.netLiquidation) / s.netLiquidation) * 100;
+
+  const tick = '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="var(--up)" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9" stroke-width="1.5"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg>';
+  const cross = '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="var(--down)" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9" stroke-width="1.5"/><path d="M9 9l6 6M15 9l-6 6"/></svg>';
+
+  let h = '<div class="card"><div class="pad"><div class="verdict">' +
+    (allPass ? tick : cross).replace('class="ico"', 'style="width:26px;height:26px;flex:none"') +
+    '<div><div class="t">' + (allPass ? "Reconciled" : "Reconciliation failed") + "</div>" +
+    '<div class="b">' + inv.filter(i => i.passed).length + " of " + inv.length +
+    " balance checks pass against " + (state.feed.live ? "live" : "snapshot") +
+    " marks.</div></div></div></div></div>";
+
+  const kv = (k, v, cls, strong) =>
+    '<div class="kv' + (strong ? " strong" : "") + '"><span class="k">' + k +
+    '</span><span class="v num ' + (cls || "") + '">' + v + "</span></div>";
+
+  h += sechead("How your return is calculated");
+  h += '<div class="card"><div class="pad">' +
+    kv("Opening deposit", money(INITIAL_CAPITAL)) +
+    kv("Securities at last price", money(s.securities)) +
+    kv("Settled cash", money(s.cash)) + hr() +
+    kv("Net liquidation value", money(s.netLiquidation), "", true) +
+    kv("less opening deposit", "(" + money(INITIAL_CAPITAL) + ")") + hr() +
+    kv("Total P&amp;L", sMoney(s.totalPnl), tone(s.totalPnl), true) +
+    kv("÷ " + money(INITIAL_CAPITAL) + " deposit", sPct(s.totalReturnPct), tone(s.totalPnl), true) +
+    "</div></div>";
+
+  const lo = RETURN_BAND.min - (RETURN_BAND.max - RETURN_BAND.min) * 0.35;
+  const hi = RETURN_BAND.max + (RETURN_BAND.max - RETURN_BAND.min) * 0.35;
+  const clamp = n => Math.max(0, Math.min(1, n));
+  const posP = clamp((s.totalReturnPct - lo) / (hi - lo)) * 100;
+  const b0 = clamp((RETURN_BAND.min - lo) / (hi - lo)) * 100;
+  const b1 = clamp((RETURN_BAND.max - lo) / (hi - lo)) * 100;
+
+  h += sechead("Target range");
+  h += '<div class="card"><div class="pad">' +
+    kv("Target", RETURN_BAND.min + "% – " + RETURN_BAND.max + "%") +
+    kv("Actual", sPct(s.totalReturnPct), inBand ? "up" : "down") +
+    '<div id="meter"><div class="track"></div>' +
+    '<div class="band" style="left:' + b0 + "%;width:" + (b1 - b0) + '%"></div>' +
+    '<div class="mark" style="left:' + posP + '%"></div></div>' +
+    '<div class="note in">Marks move with the market, so the target is a calibration and not ' +
+    "a guarantee. From here the account can fall " + Math.abs(down).toFixed(1) + "% before it drops " +
+    "below " + RETURN_BAND.min + "%, or rise " + up.toFixed(1) + "% before it exceeds " +
+    RETURN_BAND.max + "%.</div></div></div>";
+
+  h += sechead("Reconciliation", inv.filter(i => i.passed).length + "/" + inv.length);
+  h += '<div class="card flush">';
+  inv.forEach((i, n) => {
+    h += '<div class="chk">' + (i.passed ? tick : cross) +
+      '<div><div class="n">' + esc(i.name) + "</div>" +
+      '<div class="d">' + esc(i.detail) + "</div>" +
+      '<div class="x">expected ' + i.expected.toFixed(4) + " · actual " + i.actual.toFixed(4) +
+      " · delta " + Math.abs(i.expected - i.actual).toExponential(2) + "</div></div></div>" +
+      (n < inv.length - 1 ? hr(true) : "");
+  });
+  h += "</div>";
+
+  h += sechead("Account details");
+  const fact = (l, v) => '<div class="f"><div class="fl">' + esc(l) + '</div><div class="fv num">' + v + "</div></div>";
+  h += '<div class="card"><div class="pad"><div class="facts">' +
+    fact("Inception", shortDate(INCEPTION_DATE)) +
+    fact("Track record", s.years.toFixed(2) + " yrs") +
+    fact("Fills", String(TRADES.length)) +
+    fact("External cash events", "1") +
+    fact("Open positions", String(ps.length)) +
+    fact("Down positions", String(s.losers)) +
+    fact("CAGR", pct(s.cagrPct, 1)) +
+    fact("Growth", s.growth.toFixed(2) + "x") + "</div>" +
+    '<div class="note in">Positions, cost basis, realised P&amp;L and cash are replayed from the ' +
+    WORKING.length + "-row ledger on every render using average-cost accounting. No total is stored " +
+    "anywhere, so no two figures in the app can disagree. The ledger is the account’s own " +
+    "transaction record, shipped with the app; prices are the only external input and come from " +
+    "the live quote feed.</div></div></div>";
+
+  // Orders append to the ledger, so there has to be a way back to the record
+  // the app shipped with.
+  const manualCount = WORKING.filter(isManual).length;
+  h += sechead("Orders placed in the app", String(manualCount));
+  h += '<div class="card"><div class="pad">' +
+    '<div class="note in" style="padding-top:0">' +
+    (manualCount === 0
+      ? "None yet. Buy and sell from any position; orders fill at the last price and are " +
+        "written to this ledger, never sent to a broker."
+      : manualCount + " order" + (manualCount === 1 ? "" : "s") + " " +
+        (manualCount === 1 ? "is" : "are") + " included in every figure above. Clearing them " +
+        "returns the account to the record the app shipped with.") +
+    "</div>" +
+    (manualCount ? '<div id="reset">Clear in-app orders</div>' : "") +
+    "</div></div>";
+
+  h += sechead("Data source");
+  h += '<div class="card"><div class="pad">' +
+    '<div class="note in" style="padding-top:0">Safari blocks a direct call to the quote API, so ' +
+    "requests go through a relay. Point this at your own and nothing leaves your control; leave " +
+    "it blank to use the public fallbacks. Use <b>{url}</b> as the placeholder, or end with a " +
+    "trailing <b>?url=</b> style parameter.</div>" +
+    '<div class="setrow"><label>Relay endpoint</label>' +
+    '<input id="relayInput" type="url" inputmode="url" autocapitalize="off" autocorrect="off" ' +
+    'spellcheck="false" placeholder="https://my-relay.example.com/?url={url}" value="' +
+    esc(store.get("aiap.relay", "")) + '"></div>' +
+    '<div class="btnrow"><button class="btn" id="relayClear">Clear</button>' +
+    '<button class="btn primary" id="relaySave">Save &amp; refresh</button></div>' +
+    '<div class="note in">Status: ' +
+    (state.feed.live ? "live on all " + SYMBOLS.length + " symbols."
+                     : state.feed.stale.size === SYMBOLS.length
+                       ? "no relay reachable — showing snapshot marks from " + SNAPSHOT_AS_OF.slice(0, 10) + "."
+                       : state.feed.stale.size + " of " + SYMBOLS.length + " symbols on snapshot marks.") +
+    "</div></div></div>";
+
+  return h;
+}
+
+/* ----------------------------------------------------------------- detail */
+function viewDetail(sym) {
+  const pf = portfolio();
+  const p = pf.positions.find(x => x.sym === sym);
+  if (!p) return '<div class="note">No open position in ' + esc(sym) + ".</div>";
+
+  const inst = INSTRUMENTS[sym] || { name: sym, ex: "", sector: "", thesis: "" };
+  const pc = tone(p.unrealized), dc = tone(p.dayChange);
+
+  let h = '<div id="back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+    'stroke-width="2.4" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg>Portfolio</div>';
+
+  h += '<div class="card"><div class="pad"><div class="dhead">' +
+    '<div class="sym">' + p.sym + "</div>" +
+    '<div class="nm">' + esc(inst.name) + "</div>" +
+    '<div class="venue">' + esc(inst.ex) + " · USD · " + esc(inst.sector) + "</div>" +
+    '<div class="last num ' + dc + '">' + px(p.price) + "</div>" +
+    '<div class="dl num ' + dc + '">' + sMoney(p.dayChange) + " (" + sPct(p.dayChangePct) +
+    ") today</div></div></div></div>";
+
+  h += '<div id="tradebar"><div class="b buy" data-trade="BUY">Buy</div>' +
+    '<div class="b sell" data-trade="SELL">Sell</div></div>';
+
+  h += '<div class="card"><div class="pad" style="font-size:13px;line-height:19px;color:var(--text-2)">' +
+    '<div class="lbl" style="margin-bottom:6px">Thesis</div>' + esc(inst.thesis) + "</div></div>";
+
+  const kv = (k, v, cls) =>
+    '<div class="kv"><span class="k">' + esc(k) + '</span><span class="v num ' + (cls || "") + '">' +
+    v + "</span></div>";
+
+  h += sechead("Position");
+  h += '<div class="card"><div class="pad">' +
+    kv("Quantity", qty(p.qty)) +
+    kv("Average cost", px(p.avg)) +
+    kv("Cost basis", money(p.cost)) +
+    kv("Last price", px(p.price)) +
+    kv("Market value", money(p.marketValue)) +
+    kv("Unrealised P&L", sMoney(p.unrealized), pc) +
+    kv("Unrealised return", sPct(p.unrealizedPct), pc) +
+    kv("Realised P&L", sMoney(p.realized), tone(p.realized)) +
+    kv("Portfolio weight", pct(p.weight * 100, 2)) +
+    kv("First bought", shortDate(p.firstBuy)) +
+    "</div></div>";
+
+  h += sechead("Breakdown");
+  h += '<div class="card"><div class="pad"><div class="proof">' +
+    qty(p.qty) + " × " + px(p.price) + " = " + money(p.marketValue) + "<br>" +
+    money(p.marketValue) + " − " + money(p.cost) + " = " +
+    '<span class="' + pc + '">' + sMoney(p.unrealized) + "</span><br>" +
+    sMoney(p.unrealized) + " ÷ " + money(p.cost) + " = " +
+    '<span class="' + pc + '">' + sPct(p.unrealizedPct) + "</span></div></div></div>";
+
+  const trades = WORKING.filter(t => t.sym === sym);
+  h += sechead("Trades (" + trades.length + ")");
+  h += '<div class="card flush">';
+  trades.forEach((t, i) => {
+    h += '<div class="act"><div class="l"><div class="top">' +
+      '<span class="tag ' + (t.side === "BUY" ? "buy" : "sell") + '">' + t.side + "</span>" +
+      '<span class="dt">' + shortDate(t.date) + "</span></div>" +
+      '<div class="why">' + esc(t.note) + "</div></div>" +
+      '<div class="r"><div class="g num" style="font-size:14px">' + qty(t.qty) + " @ " + px(t.px) + "</div>" +
+      '<div class="ca num">' + money(t.qty * t.px) + "</div></div></div>" +
+      (i < trades.length - 1 ? hr(true) : "");
+  });
+  h += "</div>";
+  return h;
+}
+
+/* ------------------------------------------------------------ order ticket */
+
+function openTicket(sym, side) {
+  state.ticket = { sym: sym, side: side || "BUY", qty: 1, error: null };
+  renderTicket();
+}
+function closeTicket() {
+  state.ticket = null;
+  renderTicket();
+}
+
+function renderTicket() {
+  const el = document.getElementById("ticket");
+  const scrim = document.getElementById("scrim");
+  const t = state.ticket;
+
+  if (!t) {
+    el.classList.remove("on");
+    scrim.classList.remove("on");
+    return;
+  }
+
+  const inst = INSTRUMENTS[t.sym] || { name: t.sym };
+  const quote = state.feed.quotes[t.sym];
+  const check = checkOrder(WORKING, state.feed.quotes, { sym: t.sym, side: t.side, qty: t.qty });
+  const tint = t.side === "BUY" ? "var(--up-fill)" : "var(--down-fill)";
+
+  let h = '<div class="grab"></div>' +
+    '<div class="bar"><span class="t">Order</span><span id="ticketClose">✕</span></div>' +
+    '<div class="head"><div><div class="sym">' + t.sym + "</div>" +
+    '<div class="nm">' + esc(inst.name) + "</div></div>" +
+    '<div class="r"><div class="lbl">Last</div>' +
+    '<div class="lastv num">' + (quote ? px(quote.price) : "—") + "</div></div></div>";
+
+  h += '<div id="sideRow">' +
+    '<div class="s buy' + (t.side === "BUY" ? " on" : "") + '" data-side="BUY">Buy</div>' +
+    '<div class="s sell' + (t.side === "SELL" ? " on" : "") + '" data-side="SELL">Sell</div></div>';
+
+  h += '<div class="lbl" style="margin:16px 0 8px">Quantity</div>' +
+    '<div id="qtyRow"><div class="step" data-step="-1">−</div>' +
+    '<input id="qtyInput" type="text" inputmode="numeric" value="' + t.qty + '">' +
+    '<div class="step" data-step="1">+</div></div>';
+
+  h += '<div id="presets">' +
+    [["25%", 0.25], ["50%", 0.5], ["75%", 0.75], ["Max", 1]].map(function (pair) {
+      return '<div class="p" data-frac="' + pair[1] + '">' + pair[0] + "</div>";
+    }).join("") + "</div>";
+
+  h += '<div style="margin-top:16px">' +
+    '<div class="kv"><span class="k">Order value</span>' +
+    '<span class="v num">' + money(check.value) + "</span></div>" +
+    '<div class="kv"><span class="k">' +
+    (t.side === "BUY" ? "Available cash" : "Shares held") + "</span>" +
+    '<span class="v num' + (check.valid ? "" : " down") + '">' +
+    (t.side === "BUY" ? money(check.cash) : qty(check.held)) + "</span></div></div>";
+
+  const message = t.error || (!check.valid && t.qty > 0 ? check.reason : null);
+  if (message) h += '<div class="err">' + esc(message) + "</div>";
+
+  h += '<div id="submit" class="' + (check.valid ? "" : "off") + '"' +
+    (check.valid ? ' style="background:' + tint + '"' : "") + ">" +
+    (t.side === "BUY" ? "Buy" : "Sell") + (t.qty > 0 ? " " + qty(t.qty) : "") + " " + t.sym +
+    "</div>";
+
+  h += '<div class="fine">Market order, filled at the last price and written to this app’s ' +
+    "own ledger. Nothing is routed to a broker and no real money moves.</div>";
+
+  el.innerHTML = h;
+  el.classList.add("on");
+  scrim.classList.add("on");
+}
+
+function placeOrder() {
+  const t = state.ticket;
+  if (!t) return;
+  try {
+    const next = applyOrder(WORKING, state.feed.quotes, { sym: t.sym, side: t.side, qty: t.qty });
+    setManual(next.filter(isManual));
+    closeTicket();
+    render();
+  } catch (e) {
+    state.ticket.error = e.message;
+    renderTicket();
+  }
+}
+
+document.getElementById("scrim").addEventListener("click", closeTicket);
+
+document.getElementById("ticket").addEventListener("click", e => {
+  const t = state.ticket;
+  if (!t) return;
+
+  if (e.target.closest("#ticketClose")) { closeTicket(); return; }
+
+  const side = e.target.closest("[data-side]");
+  if (side) { t.side = side.getAttribute("data-side"); t.error = null; renderTicket(); return; }
+
+  const step = e.target.closest("[data-step]");
+  if (step) {
+    t.qty = Math.max(1, t.qty + Number(step.getAttribute("data-step")));
+    t.error = null;
+    renderTicket();
+    return;
+  }
+
+  const frac = e.target.closest("[data-frac]");
+  if (frac) {
+    const check = checkOrder(WORKING, state.feed.quotes, { sym: t.sym, side: t.side, qty: 1 });
+    t.qty = Math.max(1, Math.floor(check.max * Number(frac.getAttribute("data-frac"))));
+    t.error = null;
+    renderTicket();
+    return;
+  }
+
+  if (e.target.closest("#submit")) placeOrder();
+});
+
+document.getElementById("ticket").addEventListener("input", e => {
+  if (e.target.id !== "qtyInput" || !state.ticket) return;
+  const cleaned = e.target.value.replace(/[^0-9]/g, "");
+  e.target.value = cleaned;
+  state.ticket.qty = cleaned ? parseInt(cleaned, 10) : 0;
+  state.ticket.error = null;
+  // Re-render everything except the field being typed into, so the caret stays.
+  const focused = document.activeElement === e.target;
+  renderTicket();
+  if (focused) {
+    const next = document.getElementById("qtyInput");
+    if (next) { next.focus(); next.setSelectionRange(next.value.length, next.value.length); }
+  }
+});
+
+/* ==========================================================================
+   7. SHELL
+   ========================================================================== */
+
+const TABS = [
+  { key: "portfolio", label: "Portfolio", title: "Portfolio",
+    icon: '<rect x="2.5" y="5.5" width="19" height="14" rx="3.5"/><path d="M16 11h4v3h-4a1.5 1.5 0 010-3z"/>' },
+  { key: "watchlist", label: "Watchlist", title: "Watchlist",
+    icon: '<path d="M12 20s-7.5-4.7-7.5-9.4A4.1 4.1 0 0112 8.3a4.1 4.1 0 017.5 2.3C19.5 15.3 12 20 12 20z"/>' },
+  { key: "activity", label: "Activity", title: "Activity",
+    icon: '<path d="M4 8h13l-3-3M20 16H7l3 3"/>' },
+  { key: "audit", label: "Reports", title: "Reports",
+    icon: '<path d="M12 3l8 3v6c0 4.5-3.2 7.8-8 9-4.8-1.2-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/>' }
+];
+
+function renderTabs() {
+  document.getElementById("tabs").innerHTML = TABS.map(t =>
+    '<div class="tab' + (t.key === state.tab && !state.detail ? " on" : "") + '" data-tab="' + t.key + '">' +
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" ' +
+    'stroke-linecap="round" stroke-linejoin="round">' + t.icon + "</svg>" +
+    '<span class="lab">' + t.label + "</span></div>").join("");
+}
+
+function renderStrip() {
+  const live = state.feed.live, n = state.feed.stale.size;
+  const pill = document.getElementById("stripPill");
+  pill.className = "pill " + (live ? "live" : "snap");
+  pill.textContent = live ? "Live" : "Snapshot";
+  document.getElementById("stripMsg").textContent =
+    live ? "Real-time marks"
+         : n > 0 ? n + " symbol" + (n === 1 ? "" : "s") + " on last close"
+                 : "Last close";
+  document.getElementById("stripClock").textContent = clockTime(state.lastUpdated);
+  document.getElementById("stripIcon").style.opacity = state.refreshing ? "0.35" : "1";
+}
+
+function render() {
+  const tab = TABS.find(t => t.key === state.tab);
+  // A stock detail screen is headed by the ticker, so the title still tells
+  // you what you are looking at once the card scrolls away.
+  document.getElementById("screenTitle").textContent = state.detail || tab.title;
+
+  let html;
+  try {
+    html = state.detail ? viewDetail(state.detail)
+         : state.tab === "portfolio" ? viewPortfolio()
+         : state.tab === "watchlist" ? viewWatchlist()
+         : state.tab === "activity"  ? viewActivity()
+         : viewAudit();
+  } catch (e) {
+    html = '<div class="note" style="padding-top:24px">Could not render: ' + esc(e.message) + "</div>";
+  }
+  sheet.innerHTML = html;
+  renderStrip();
+  renderTabs();
+}
+
+/* ----------------------------------------------------------------- events */
+document.getElementById("tabs").addEventListener("click", e => {
+  const el = e.target.closest("[data-tab]");
+  if (!el) return;
+  state.detail = null;
+  state.tab = el.getAttribute("data-tab");
+  document.getElementById("scroller").scrollTop = 0;
+  render();
+});
+
+document.getElementById("searchBtn").addEventListener("click", () => {
+  const wrap = document.getElementById("searchWrap");
+  const input = document.getElementById("searchInput");
+  const open = wrap.hidden;
+  wrap.hidden = !open;
+  document.getElementById("searchBtn").classList.toggle("on", open);
+  if (open) input.focus();
+  else if (state.query) { state.query = ""; input.value = ""; render(); }
+});
+
+document.getElementById("searchInput").addEventListener("input", e => {
+  state.query = e.target.value;
+  render();
+});
+
+sheet.addEventListener("click", e => {
+  if (e.target.closest("#back")) { state.detail = null; render(); return; }
+
+  if (e.target.closest("#acctToggle")) { state.acctOpen = !state.acctOpen; render(); return; }
+
+  const sector = e.target.closest("[data-sector]");
+  if (sector) { state.sector = sector.getAttribute("data-sector"); render(); return; }
+
+  const sortCol = e.target.closest("[data-sort]");
+  if (sortCol) {
+    const key = sortCol.getAttribute("data-sort");
+    // Same column toggles direction; a new column starts descending, which is
+    // what you want for every numeric column here.
+    state.sort = state.sort.key === key
+      ? { key, dir: -state.sort.dir }
+      : { key, dir: key === "sym" ? 1 : -1 };
+    render();
+    return;
+  }
+
+  const wsortCol = e.target.closest("[data-wsort]");
+  if (wsortCol) {
+    const key = wsortCol.getAttribute("data-wsort");
+    state.wsort = state.wsort.key === key
+      ? { key, dir: -state.wsort.dir }
+      : { key, dir: -1 };
+    render();
+    return;
+  }
+
+  if (e.target.closest("#relaySave")) {
+    store.set("aiap.relay", document.getElementById("relayInput").value.trim());
+    workingRelay = -1; store.set("aiap.relayIndex", "-1");
+    refresh();
+    return;
+  }
+  if (e.target.closest("#relayClear")) {
+    store.set("aiap.relay", "");
+    document.getElementById("relayInput").value = "";
+    workingRelay = -1; store.set("aiap.relayIndex", "-1");
+    refresh();
+    return;
+  }
+
+  const trade = e.target.closest("[data-trade]");
+  if (trade && state.detail) {
+    openTicket(state.detail, trade.getAttribute("data-trade"));
+    return;
+  }
+
+  if (e.target.closest("#reset")) {
+    setManual([]);
+    render();
+    return;
+  }
+
+  const row = e.target.closest("[data-sym]");
+  if (row) {
+    state.detail = row.getAttribute("data-sym");
+    document.getElementById("scroller").scrollTop = 0;
+    render();
+  }
+});
+
+document.getElementById("strip").addEventListener("click", refresh);
+
+/* --------------------------------------------------------- pull to refresh */
+/* In standalone mode there is no browser chrome to pull against, so the
+   gesture has to be built. */
+(function () {
+  const scroller = document.getElementById("scroller");
+  const pull = document.getElementById("pull");
+  const THRESHOLD = 64;
+  let startY = 0, pulling = false;
+
+  scroller.addEventListener("touchstart", e => {
+    if (scroller.scrollTop <= 0 && e.touches.length === 1) {
+      startY = e.touches[0].clientY;
+      pulling = true;
+      pull.style.transition = "none";
+    }
+  }, { passive: true });
+
+  scroller.addEventListener("touchmove", e => {
+    if (!pulling) return;
+    const dist = e.touches[0].clientY - startY;
+    if (dist <= 0) { pull.style.height = "0px"; return; }
+    const h = Math.min(dist * 0.5, 90);          // resistance
+    pull.style.height = h + "px";
+    pull.textContent = h >= THRESHOLD ? "Release to refresh" : "Pull to refresh";
+    pull.className = h >= THRESHOLD ? "armed" : "";
+  }, { passive: true });
+
+  scroller.addEventListener("touchend", () => {
+    if (!pulling) return;
+    pulling = false;
+    const h = parseFloat(pull.style.height) || 0;
+    pull.style.transition = "height 0.18s ease";
+    if (h >= THRESHOLD) {
+      pull.style.height = "34px";
+      pull.textContent = "Refreshing…";
+      pull.className = "";
+      refresh().then(() => { pull.style.height = "0px"; });
+    } else {
+      pull.style.height = "0px";
+    }
+  }, { passive: true });
+})();
+
+/* ---------------------------------------------------------------- refresh */
+let inFlight = false;
+
+async function refresh() {
+  if (inFlight) return;
+  inFlight = true;
+  state.refreshing = true;
+  renderStrip();
+  try {
+    const feed = await fetchQuotes();
+    state.feed = feed;
+    state.lastUpdated = new Date();
+    state.curve = buildModelledCurve(feed.quotes, Date.now());
+  } catch (e) {
+    /* keep the previous marks; the strip already shows staleness */
+  } finally {
+    inFlight = false;
+    state.refreshing = false;
+    render();
+  }
+}
+
+setInterval(() => { if (!document.hidden) refresh(); }, REFRESH_MS);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) refresh(); });
+
+/* The chart's viewBox is sized to the viewport, so a rotation needs a repaint. */
+let resizeTimer = null;
+window.addEventListener("resize", () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(render, 150);
+});
+
+/* -------------------------------------------------- home screen icon ----- */
+/* iOS reads the icon from the DOM when Add to Home Screen is tapped, so
+   generating it here is enough — it keeps the file to a single document with
+   no binary blob pasted into it. */
+(function () {
+  try {
+    const S = 180, c = document.createElement("canvas");
+    c.width = c.height = S;
+    const g = c.getContext("2d");
+
+    const bg = g.createLinearGradient(0, 0, S, S);
+    bg.addColorStop(0, "#ff9a2e");
+    bg.addColorStop(1, "#ff6a00");
+    g.fillStyle = bg; g.fillRect(0, 0, S, S);
+
+    const pts = [[26,132],[54,120],[82,104],[110,70],[138,52],[158,34]];
+    g.beginPath();
+    g.moveTo(pts[0][0], pts[0][1]);
+    for (const p of pts) g.lineTo(p[0], p[1]);
+    g.strokeStyle = "rgba(0,0,0,0.72)";
+    g.lineWidth = 11; g.lineJoin = "round"; g.lineCap = "round";
+    g.stroke();
+
+    const link = document.createElement("link");
+    link.rel = "apple-touch-icon";
+    link.href = c.toDataURL("image/png");
+    document.head.appendChild(link);
+  } catch (e) { /* icon is cosmetic */ }
+})();
+
+/* Suppress the double-tap-to-zoom delay without blocking normal taps. */
+document.addEventListener("dblclick", e => e.preventDefault(), { passive: false });
+document.addEventListener("gesturestart", e => e.preventDefault(), { passive: false });
+
+/**
+ * The engine, exposed so the numbers can be checked from outside the UI —
+ * from Safari's console, or by the parity script that asserts this build
+ * agrees with the React Native one. Everything here is a pure function of the
+ * ledger and a quote map.
+ *
+ *   PORTFOLIO.checkInvariants(PORTFOLIO.portfolio())   // the checks, live
+ *   PORTFOLIO.portfolio().summary.totalReturnPct      // the headline number
+ */
+window.PORTFOLIO = {
+  TRADES, INSTRUMENTS, SNAPSHOT, SNAPSHOT_AS_OF, SYMBOLS,
+  INITIAL_CAPITAL, INCEPTION_DATE, RETURN_BAND,
+  replayLedger, buildPortfolio, checkInvariants,
+  buildModelledCurve, monthEnds, holdingsAsOf,
+  snapshotQuotes, fetchQuotes,
+  checkOrder, applyOrder, nextOrderId, isManual, setManual,
+  get WORKING() { return WORKING; },
+  get MANUAL() { return MANUAL; },
+  portfolio, state
+};
+
+render();
+refresh();
+</script>
+</body>
+</html>

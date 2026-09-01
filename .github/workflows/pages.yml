@@ -1,0 +1,55 @@
+# Publishes ai-portfolio.html to GitHub Pages as the site root.
+#
+# Hosting the file as its own top-level document is what makes it a real
+# home-screen app: the apple-mobile-web-app meta tags and the generated icon
+# only apply when the page is not inside someone else's iframe, and Safari only
+# allows the quote requests from a proper https origin.
+#
+# ONE-TIME SETUP: Settings -> Pages -> Build and deployment -> Source:
+# "GitHub Actions". The default Actions token is not allowed to create the
+# Pages site itself, so this cannot be automated from here. After that, every
+# push to this branch that touches the app redeploys it.
+name: Deploy Portfolio to Pages
+
+on:
+  push:
+    branches: [claude/ai-portfolio-mobile-app-830bot]
+    paths:
+      - ai-portfolio.html
+      - .github/workflows/pages.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never cancel a deploy half-way; let an in-flight one finish.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Assemble site
+        run: |
+          mkdir -p _site
+          # Served at the site root, so the install URL is short enough to type.
+          cp ai-portfolio.html _site/index.html
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
