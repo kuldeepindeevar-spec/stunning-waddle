@@ -14,7 +14,8 @@
     "test": "tsx scripts/audit.ts",
     "build:web": "expo export --platform web --output-dir dist",
     "shots": "node scripts/shots.mjs shots",
-    "verify:html": "tsx scripts/verify-html.mts ../ai-portfolio.html"
+    "verify:html": "tsx scripts/verify-html.mts ../ai-portfolio.html",
+    "build:prompt": "node scripts/build-prompt-page.mjs dist/build-prompt.html && node scripts/check-prompt-page.mjs dist/build-prompt.html"
   },
   "dependencies": {
     "@expo/metro-runtime": "~4.0.1",
